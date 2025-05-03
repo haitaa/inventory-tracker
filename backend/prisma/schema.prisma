@@ -1,0 +1,74 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Product {
+  id                   BigInt                 @id @default(autoincrement())
+  userId               BigInt
+  user                 User                   @relation(fields: [userId], references: [id])
+  name                 String
+  sku                  String                 @unique
+  price                Float
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  InventoryTransaction InventoryTransaction[]
+  Stock                Stock[]
+}
+
+model InventoryTransaction {
+  id          BigInt          @id @default(autoincrement())
+  userId      BigInt
+  user        User            @relation(fields: [userId], references: [id])
+  productId   BigInt
+  product     Product         @relation(fields: [productId], references: [id])
+  warehouseId BigInt
+  warehouse   Warehouse       @relation(fields: [warehouseId], references: [id])
+  type        TransactionType
+  quantity    Int
+  createdAt   DateTime        @default(now())
+}
+
+model Stock {
+  id          BigInt    @id @default(autoincrement())
+  userId      BigInt
+  user        User      @relation(fields: [userId], references: [id])
+  productId   BigInt
+  product     Product   @relation(fields: [productId], references: [id])
+  warehouseId BigInt
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  quantity    Int       @default(0)
+  version     Int       @default(1)
+
+  @@unique([productId, warehouseId])
+}
+
+enum TransactionType {
+  IN
+  OUT
+}
+
+model Warehouse {
+  id                   BigInt                 @id @default(autoincrement())
+  name                 String?
+  code                 String?
+  InventoryTransaction InventoryTransaction[]
+  Stock                Stock[]
+}
+
+model User {
+  id                    BigInt                 @id @default(autoincrement())
+  email                 String                 @unique
+  username              String
+  password              String
+  products              Product[]
+  inventoryTransactions InventoryTransaction[]
+  stock                 Stock[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
