@@ -8,10 +8,10 @@ import api from "@/app/lib/api";
  * @property price - Monetary value of the product.
  */
 export interface ProductType {
-	id: string;
-	name: string;
-	sku: string;
-	price: number;
+  id: string;
+  name: string;
+  sku: string;
+  price: number;
 }
 
 /**
@@ -19,10 +19,11 @@ export interface ProductType {
  * @returns A promise that resolves to an array of ProductType objects.
  * @throws Will throw an error if the network request fails.
  */
-export const getProducts = async (): Promise<ProductType[]> => {
-	const response = await api.get<ProductType[]>("/products");
-	return response.data;
-}
+export const getProducts = async (token: string): Promise<ProductType[]> => {
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const response = await api.get<ProductType[]>("/products", { headers });
+  return response.data;
+};
 
 /**
  * Sends a new product to the API for creation.
@@ -31,11 +32,11 @@ export const getProducts = async (): Promise<ProductType[]> => {
  * @throws Will throw an error if the creation request fails.
  */
 export const createProduct = async (
-	product: Omit<ProductType, "id">
+  product: Omit<ProductType, "id">,
 ): Promise<ProductType> => {
-	const response = await api.post("products", product);
-	return response.data;
-}
+  const response = await api.post("products", product);
+  return response.data;
+};
 
 /**
  * Updates an existing product by its unique identifier.
@@ -45,12 +46,12 @@ export const createProduct = async (
  * @throws Will throw an error if the update request fails.
  */
 export const updateProduct = async (
-	id: string,
-	product: Partial<ProductType>
+  id: string,
+  product: Partial<ProductType>,
 ): Promise<ProductType> => {
-	const response = await api.put(`products/${id}`, product);
-	return response.data;
-}
+  const response = await api.put(`products/${id}`, product);
+  return response.data;
+};
 
 /**
  * Deletes a product from the API by its id.
@@ -59,5 +60,5 @@ export const updateProduct = async (
  * @throws Will throw an error if the deletion request fails.
  */
 export const deleteProduct = async (id: string): Promise<void> => {
-	await api.delete(`products/${id}`);
-}
+  await api.delete(`products/${id}`);
+};

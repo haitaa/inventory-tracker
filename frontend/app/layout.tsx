@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import "./globals.css";
 
-import { AuthProvider} from "@/app/lib/auth";
+import { AuthProvider } from "@/app/lib/auth";
 import React from "react";
 
 export const metadata: Metadata = {
@@ -16,9 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

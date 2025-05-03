@@ -1,41 +1,22 @@
 "use client";
 
+import { getProducts, ProductType } from "@/app/lib/productService";
+import { columns } from "@/app/(mainLayout)/products/columns";
 import { useEffect, useState } from "react";
-import api from "@/app/lib/api";
-import Layout from "@/components/layout";
-
-interface ProductType {
-  id: string;
-  name: string;
-  sku: string;
-  price: number;
-}
+import { DataTable } from "@/app/(mainLayout)/products/data-table";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<ProductType[]>([]);
 
-  // TODO: getProducts gibi fonksiyonlar hazırlanacak.
-
+  // TODO: Add spinner for the reload job
   useEffect(() => {
-    api.get("/products").then((res) => setProducts(res.data));
+    const token = localStorage.getItem("token") ?? "";
+    getProducts(token).then(setProducts).catch(console.error);
   }, []);
 
   return (
-    <Layout>
-      <h1 className="text-3xl mb-4">Ürünler</h1>
-      <ul className="space-y-2">
-        {products.map((p) => (
-          <li
-            key={p.id}
-            className="p-4 bg-white rounded shadow flex justify-between"
-          >
-            <span>
-              {p.name} (SKU: {p.sku})
-            </span>
-            <span>{p.price} ₺</span>
-          </li>
-        ))}
-      </ul>
-    </Layout>
+    <div className="container mx-auto py-10">
+      <DataTable columns={columns} data={products} />
+    </div>
   );
 }
