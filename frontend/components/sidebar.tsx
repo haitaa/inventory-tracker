@@ -11,8 +11,6 @@ import { MdOutlineBarChart } from "react-icons/md";
 import { HiQuestionMarkCircle } from "react-icons/hi";
 import { FaArrowRightToBracket } from "react-icons/fa6";
 
-import Image from "next/image";
-
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LuLayoutDashboard },
   { label: "Order", href: "/orders", icon: LuShoppingBag },
