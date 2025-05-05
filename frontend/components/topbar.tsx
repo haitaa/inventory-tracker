@@ -5,7 +5,7 @@ import { Bell } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { IoMdSearch } from "react-icons/io";
 import { useEffect, useState } from "react";
-import { getCurrentUser } from "@/app/lib/userService";
+import { getCurrentUser, logout, UserType } from "@/app/lib/userService";
 
 import {
   Cloud,
@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const Topbar = () => {
-  const [user, setUser] = useState({});
+  const [user, setUser] = useState<UserType>({});
 
   useEffect(() => {
     const token = localStorage.getItem("token") ?? "";
@@ -165,7 +165,7 @@ const Topbar = () => {
               <span>API</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => logout()}>
               <LogOut />
               <span>Log out</span>
               <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>

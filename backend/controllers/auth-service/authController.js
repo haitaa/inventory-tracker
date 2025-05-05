@@ -72,6 +72,7 @@ export async function signOut(req, res) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
+    path: "/",
   });
   res.status(200).json({ message: "Çıkış yapıldı." });
 }
