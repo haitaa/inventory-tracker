@@ -13,14 +13,14 @@ import { FaArrowRightToBracket } from "react-icons/fa6";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LuLayoutDashboard },
-  { label: "Order", href: "/orders", icon: LuShoppingBag },
-  { label: "Product", href: "/products", icon: FaCube },
-  { label: "Customer", href: "/customers", icon: FaUserGroup },
-  { label: "Employee", href: "/employees", icon: HiOutlineBuildingOffice2 },
-  { label: "Billing", href: "/billing", icon: BsFillCreditCard2BackFill },
-  { label: "Analytics", href: "/analytics", icon: MdOutlineBarChart },
-  { label: "Setting", href: "/settings", icon: HiCog6Tooth },
-  { label: "Help", href: "/help", icon: HiQuestionMarkCircle },
+  { label: "Siparişler", href: "/orders", icon: LuShoppingBag },
+  { label: "Ürünler", href: "/products", icon: FaCube },
+  { label: "Müşteriler", href: "/customers", icon: FaUserGroup },
+  { label: "Çalışanlar", href: "/employees", icon: HiOutlineBuildingOffice2 },
+  { label: "Faturalama", href: "/billing", icon: BsFillCreditCard2BackFill },
+  { label: "Analitik", href: "/analytics", icon: MdOutlineBarChart },
+  { label: "Ayarlar", href: "/settings", icon: HiCog6Tooth },
+  { label: "Yardım", href: "/help", icon: HiQuestionMarkCircle },
 ];
 
 export default function Sidebar() {
@@ -59,7 +59,7 @@ export default function Sidebar() {
           className="w-full flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
         >
           <FaArrowRightToBracket className="h-5 w-5" />
-          <span className="ml-3">Log out</span>
+          <span className="ml-3">Çıkış Yap</span>
         </button>
       </div>
     </aside>

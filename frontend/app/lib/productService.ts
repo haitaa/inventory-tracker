@@ -1,15 +1,37 @@
 import api from "@/app/lib/api";
-import { ProductType, ProductStatusEnum, ProductVisibilityEnum } from "@/types/schema";
+
+export interface ProductType {
+  id: string;
+  name: string;
+  sku: string;
+  price: number;
+  cost_price?: number;
+  description?: string;
+  barcode?: string;
+  imageUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+}
 
 /**
- * Fetches the list of all products from the backend API.
- * @param token - JWT token for authorization
- * @returns A promise that resolves to an array of ProductType objects.
- * @throws Will throw an error if the network request fails.
+ * Kullanıcıya ait tüm ürünleri getirir.
+ * Bu fonksiyon, giriş yapmış kullanıcının kendi ürünlerini çeker.
+ * Kimlik doğrulama otomatik olarak API interceptor tarafından sağlanır.
+ * @returns {Promise<ProductType[]>} Ürün listesi
  */
-export const getProducts = async (token: string): Promise<ProductType[]> => {
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const response = await api.get<ProductType[]>("/products", { headers });
+export const getProducts = async (): Promise<ProductType[]> => {
+  const response = await api.get<ProductType[]>("/products");
+  return response.data;
+};
+
+/**
+ * ID'ye göre ürün detaylarını getirir.
+ * @param {string} id - Ürünün ID'si
+ * @returns {Promise<ProductType>} Ürün detayları
+ */
+export const getProductById = async (id: string): Promise<ProductType> => {
+  const response = await api.get<ProductType>(`/products/${id}`);
   return response.data;
 };
 
@@ -21,7 +43,14 @@ export const getProducts = async (token: string): Promise<ProductType[]> => {
  * @throws Will throw an error if the creation request fails.
  */
 export const createProduct = async (
-  product: Omit<ProductType, "id">,
+  product: {
+    name: string;
+    sku: string;
+    price: number;
+    cost_price?: number;
+    description?: string;
+    barcode?: string;
+  },
   image?: File,
 ): Promise<ProductType> => {
   if (!image) {

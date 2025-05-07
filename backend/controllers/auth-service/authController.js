@@ -76,3 +76,38 @@ export async function signOut(req, res) {
   });
   res.status(200).json({ message: "Çıkış yapıldı." });
 }
+
+// Kullanıcı bilgilerini token'dan getiren endpoint
+export async function getMe(req, res, next) {
+  try {
+    // req.userId middleware tarafından token içinden çıkarılıp ekleniyor
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Giriş yapılmadı." });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: BigInt(userId) },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "Kullanıcı bulunamadı." });
+    }
+
+    res.json({
+      user: {
+        id: user.id.toString(),
+        email: user.email,
+        username: user.username,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}

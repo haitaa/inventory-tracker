@@ -491,3 +491,81 @@ export const cancelOrder = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Siparişlerin durumunu toplu olarak günceller.
+ * @param {Request} req - Express request nesnesi
+ * @param {Response} res - Express response nesnesi
+ * @param {NextFunction} next - Express next middleware fonksiyonu
+ * @returns {Promise<Response>} - Güncellenmiş siparişler veya hata mesajı
+ */
+export const bulkUpdateOrderStatus = async (req, res, next) => {
+  try {
+    const userId = BigInt(req.userId);
+    const { ids, status } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Sipariş ID'leri belirtilmelidir" });
+    }
+
+    if (!status) {
+      return res.status(400).json({ message: "Durum belirtilmelidir" });
+    }
+
+    // Durum için geçerlilik kontrolü
+    const validStatuses = [
+      "PENDING",
+      "PROCESSING",
+      "SHIPPED",
+      "DELIVERED",
+      "CANCELLED",
+      "RETURNED",
+      "COMPLETED",
+    ];
+
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        message:
+          "Geçersiz durum. Geçerli değerler: " + validStatuses.join(", "),
+      });
+    }
+
+    // BigInt ID'lere dönüştürme
+    const orderIds = ids.map((id) => BigInt(id));
+
+    // Kullanıcının bu siparişlere erişim yetkisi olup olmadığını kontrol et
+    const userOrders = await prisma.order.findMany({
+      where: {
+        id: { in: orderIds },
+        userId,
+      },
+      select: { id: true },
+    });
+
+    if (userOrders.length !== orderIds.length) {
+      return res.status(403).json({
+        message: "Bir veya daha fazla siparişe erişim izniniz yok",
+      });
+    }
+
+    // Siparişlerin durumlarını toplu olarak güncelle
+    const updatedOrders = await prisma.$transaction(
+      orderIds.map((id) =>
+        prisma.order.update({
+          where: { id },
+          data: { status },
+          include: {
+            customer: true,
+            items: true,
+          },
+        })
+      )
+    );
+
+    return res.status(200).json(updatedOrders.map(normalizeOrder));
+  } catch (error) {
+    next(error);
+  }
+};

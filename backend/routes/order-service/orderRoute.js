@@ -7,6 +7,7 @@ import {
   updatePaymentStatus,
   updateShippingInfo,
   cancelOrder,
+  bulkUpdateOrderStatus,
 } from "../../controllers/order-service/orderController.js";
 import { requireAuth } from "../../middleware/authMiddleware.js";
 
@@ -47,5 +48,8 @@ orderRouter.patch("/:id/shipping", updateShippingInfo);
 
 // Siparişi iptal etme - POST /api/orders/:id/cancel
 orderRouter.post("/:id/cancel", cancelOrder);
+
+// Toplu sipariş durumu güncelleme - PATCH /api/orders/bulk-status
+orderRouter.patch("/bulk-status", bulkUpdateOrderStatus);
 
 export default orderRouter;
