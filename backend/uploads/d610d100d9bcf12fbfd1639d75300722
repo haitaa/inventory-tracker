@@ -1,0 +1,6 @@
+id,name,sku,price,cost_price,description,barcode
+40,Bluetooth Fitness Tracker,BFT-040,55.0,30.0,Track your workouts and health metrics via Bluetooth.,5554443332221
+41,Electric Milk Frother,EMF-041,24.95,12.0,Handheld frother for barista-style coffee at home.,5554443332222
+42,Noise-Isolating Earbuds,NIE-042,39.99,20.0,Comfortable earbuds with passive noise isolation.,5554443332223
+43,Ceramic Coffee Grinder,CCG-043,18.5,8.0,Adjustable grind settings for brewing fresh coffee.,5554443332224
+44,Programmable Slow Cooker,PSC-044,69.0,35.0,8-in-1 programmable slow cooker with timer.,5554443332225
