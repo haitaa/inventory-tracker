@@ -8,6 +8,12 @@ import {
   importProductsFromJson,
   importProductsFromXml,
 } from "../../controllers/file-import-service/fileImportController.js";
+import {
+  exportProductsToCsv,
+  exportProductsToJson,
+  exportProductsToExcel,
+  exportProductsToXml,
+} from "../../controllers/file-export-service/fileExportController.js";
 import { requireAuth } from "../../middleware/authMiddleware.js";
 
 const fileImportRouter = express.Router();
@@ -106,5 +112,35 @@ fileImportRouter.post(
     }
   }
 );
+
+// Export endpoints
+fileImportRouter.get("/export-csv", requireAuth, async (req, res, next) => {
+  try {
+    await exportProductsToCsv(res, req.userId);
+  } catch (err) {
+    next(err);
+  }
+});
+fileImportRouter.get("/export-json", requireAuth, async (req, res, next) => {
+  try {
+    await exportProductsToJson(res, req.userId);
+  } catch (err) {
+    next(err);
+  }
+});
+fileImportRouter.get("/export-excel", requireAuth, async (req, res, next) => {
+  try {
+    await exportProductsToExcel(res, req.userId);
+  } catch (err) {
+    next(err);
+  }
+});
+fileImportRouter.get("/export-xml", requireAuth, async (req, res, next) => {
+  try {
+    await exportProductsToXml(res, req.userId);
+  } catch (err) {
+    next(err);
+  }
+});
 
 export default fileImportRouter;
