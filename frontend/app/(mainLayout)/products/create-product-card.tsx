@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import toast, { Toaster } from "react-hot-toast";
 import { createProduct } from "@/app/lib/productService";
 import axios from "axios";
+import { ImageUploader } from "@/components/image-uploader";
 
 interface CreateProductCardProps {
   trigger: React.ReactNode;
@@ -34,6 +35,7 @@ export function CreateProductCard({
   const [description, setDescription] = useState("");
   const [barcode, setBarcode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
 
   const handleSubmit = async () => {
     if (!name || !sku || !price) {
@@ -42,11 +44,17 @@ export function CreateProductCard({
     }
     setLoading(true);
     try {
-      await createProduct({
-        name,
-        sku,
-        price: parseFloat(price),
-      });
+      await createProduct(
+        {
+          name,
+          sku,
+          price: parseFloat(price),
+          cost_price: costPrice ? parseFloat(costPrice) : undefined,
+          description,
+          barcode,
+        },
+        selectedImage || undefined
+      );
       toast.success("Ürün başarıyla oluşturuldu.");
       onSuccess?.();
       // Reset form
@@ -56,6 +64,7 @@ export function CreateProductCard({
       setCostPrice("");
       setDescription("");
       setBarcode("");
+      setSelectedImage(null);
     } catch (err) {
       console.error(err);
       if (axios.isAxiosError(err) && err.response?.status === 409) {
@@ -157,6 +166,13 @@ export function CreateProductCard({
                 id="product-barcode"
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1">
+              <Label>Ürün Resmi</Label>
+              <ImageUploader
+                onImageSelect={(file) => setSelectedImage(file)}
+                className="w-full max-w-sm mx-auto"
               />
             </div>
           </div>

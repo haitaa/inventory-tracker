@@ -1,4 +1,9 @@
+"use client";
+
 import type { ColumnDef } from "@tanstack/table-core";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { deleteProduct } from "@/app/lib/productService";
 import { z } from "zod";
 
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
@@ -13,12 +18,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
-
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getFullImageUrl } from "@/app/lib/productService";
 export const productSchema = z.object({
   id: z.string(),
   name: z.string(),
   sku: z.string(),
   price: z.number(),
+  imageUrl: z.string().optional(),
 });
 
 export type Product = z.infer<typeof productSchema>;
@@ -45,8 +52,24 @@ export const columns: ColumnDef<Product>[] = [
     ),
   },
   {
-    accessorKey: "id",
-    header: "ID",
+    accessorKey: "Image",
+    header: "Image",
+    cell: ({ row }) => {
+      const product = row.original;
+      const firstLetter = product.imageUrl?.charAt(0) || "?";
+
+      return (
+        <Avatar className="h-10 w-10">
+          <AvatarImage
+            src={
+              product.imageUrl ? getFullImageUrl(product.imageUrl) : undefined
+            }
+            alt={product.name}
+          />
+          <AvatarFallback>{firstLetter.toUpperCase()}</AvatarFallback>
+        </Avatar>
+      );
+    },
   },
   {
     accessorKey: "name",
@@ -86,7 +109,24 @@ export const columns: ColumnDef<Product>[] = [
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      const payment = row.original;
+      const product = row.original;
+      const router = useRouter();
+
+      const handleView = () => {
+        router.push(`/products/${product.id}`);
+      };
+
+      const handleDelete = async () => {
+        if (!confirm("Bu ürünü silmek istediğinize emin misiniz?")) return;
+        try {
+          await deleteProduct(product.id);
+          toast.success("Ürün silindi.");
+          router.refresh();
+        } catch (error) {
+          console.error(error);
+          toast.error("Ürün silinirken hata oluştu.");
+        }
+      };
 
       return (
         <DropdownMenu>
@@ -98,14 +138,11 @@ export const columns: ColumnDef<Product>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(payment.id)}
-            >
-              Copy payment ID
+            <DropdownMenuItem onClick={handleView}>
+              View Details
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            <DropdownMenuItem>View payment details</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleDelete}>Delete</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
