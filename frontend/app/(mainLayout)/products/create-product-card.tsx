@@ -1,3 +1,5 @@
+"use client";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,100 +14,168 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import toast, { Toaster } from "react-hot-toast";
+import { createProduct } from "@/app/lib/productService";
+import axios from "axios";
 
 interface CreateProductCardProps {
   trigger: React.ReactNode;
+  onSuccess?: () => void;
 }
 
-export function CreateProductCard({ trigger }: CreateProductCardProps) {
+export function CreateProductCard({
+  trigger,
+  onSuccess,
+}: CreateProductCardProps) {
+  const [name, setName] = useState("");
+  const [sku, setSku] = useState("");
+  const [price, setPrice] = useState("");
+  const [costPrice, setCostPrice] = useState("");
+  const [description, setDescription] = useState("");
+  const [barcode, setBarcode] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!name || !sku || !price) {
+      toast.error("Lütfen zorunlu alanları doldurun.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await createProduct({
+        name,
+        sku,
+        price: parseFloat(price),
+      });
+      toast.success("Ürün başarıyla oluşturuldu.");
+      onSuccess?.();
+      // Reset form
+      setName("");
+      setSku("");
+      setPrice("");
+      setCostPrice("");
+      setDescription("");
+      setBarcode("");
+    } catch (err) {
+      console.error(err);
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        toast.error("Bu SKU ile zaten bir ürün mevcut.");
+      } else {
+        toast.error("Ürün oluşturulurken hata oluştu.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <Dialog>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Create Product</DialogTitle>
-          <DialogDescription>
-            Add a new product to your catalog.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Toaster position="bottom-right" />
+      <Dialog>
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create Product</DialogTitle>
+            <DialogDescription>
+              Add a new product to your catalog.
+            </DialogDescription>
+          </DialogHeader>
 
-        <form className="grid gap-4 py-4">
-          {/* Ürün Adı */}
-          <div className="grid gap-1">
-            <Label htmlFor="product-name">Product Name</Label>
-            <Input
-              id="product-name"
-              name="name"
-              placeholder="e.g. Fancy Lamp"
-              required
-            />
-          </div>
-
-          {/* Açıklama */}
-          <div className="grid gap-1">
-            <Label htmlFor="product-description">Description</Label>
-            <Textarea
-              id="product-description"
-              name="description"
-              placeholder="Describe your product"
-              rows={4}
-              required
-            />
-          </div>
-
-          {/* Fiyat ve Stok */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid gap-4 py-4">
             <div className="grid gap-1">
-              <Label htmlFor="product-price">Price ($)</Label>
+              <Label htmlFor="product-name">Name*</Label>
               <Input
-                id="product-price"
-                name="price"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
+                id="product-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Fancy Lamp"
                 required
               />
             </div>
             <div className="grid gap-1">
-              <Label htmlFor="product-stock">Stock Quantity</Label>
+              <Label htmlFor="product-sku">SKU*</Label>
               <Input
-                id="product-stock"
-                name="stock"
-                type="number"
-                placeholder="0"
+                id="product-sku"
+                value={sku}
+                onChange={(e) => setSku(e.target.value)}
+                placeholder="e.g. SKU-001"
                 required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-1">
+                <Label htmlFor="product-price">Price*</Label>
+                <Input
+                  id="product-price"
+                  type="number"
+                  step="0.01"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="product-cost">
+                  Cost Price{" "}
+                  <span className="text-xs text-muted-foreground">
+                    (Optional)
+                  </span>
+                </Label>
+                <Input
+                  id="product-cost"
+                  type="number"
+                  step="0.01"
+                  value={costPrice}
+                  onChange={(e) => setCostPrice(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div className="grid gap-1">
+              <Label htmlFor="product-description">
+                Description{" "}
+                <span className="text-xs text-muted-foreground">
+                  (Optional)
+                </span>
+              </Label>
+              <Textarea
+                id="product-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+              />
+            </div>
+            <div className="grid gap-1">
+              <Label htmlFor="product-barcode">
+                Barcode{" "}
+                <span className="text-xs text-muted-foreground">
+                  (Optional)
+                </span>
+              </Label>
+              <Input
+                id="product-barcode"
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
               />
             </div>
           </div>
 
-          {/* Kategori */}
-          <div className="grid gap-1">
-            <Label htmlFor="product-category">Category</Label>
-            <Input
-              id="product-category"
-              name="category"
-              placeholder="e.g. Home Decor"
-            />
-          </div>
-
-          {/* Görsel URL */}
-          <div className="grid gap-1">
-            <Label htmlFor="product-image">Image URL</Label>
-            <Input
-              id="product-image"
-              name="image"
-              placeholder="https://example.com/image.jpg"
-            />
-          </div>
-        </form>
-
-        <DialogFooter className="space-x-2">
-          <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
-          </DialogClose>
-          <Button type="submit">Create</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter className="space-x-2">
+            <DialogClose asChild>
+              <Button variant="secondary">Cancel</Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button
+                onClick={handleSubmit}
+                disabled={loading || !name || !sku || !price}
+              >
+                {loading ? "Creating..." : "Create"}
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

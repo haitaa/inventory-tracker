@@ -34,7 +34,7 @@ export const getProducts = async (token: string): Promise<ProductType[]> => {
 export const createProduct = async (
   product: Omit<ProductType, "id">,
 ): Promise<ProductType> => {
-  const response = await api.post("products", product);
+  const response = await api.post("/products", product);
   return response.data;
 };
 
@@ -49,7 +49,7 @@ export const updateProduct = async (
   id: string,
   product: Partial<ProductType>,
 ): Promise<ProductType> => {
-  const response = await api.put(`products/${id}`, product);
+  const response = await api.put(`/products/${id}`, product);
   return response.data;
 };
 
@@ -60,5 +60,5 @@ export const updateProduct = async (
  * @throws Will throw an error if the deletion request fails.
  */
 export const deleteProduct = async (id: string): Promise<void> => {
-  await api.delete(`products/${id}`);
+  await api.delete(`/products/${id}`);
 };

@@ -15,11 +15,13 @@ import { DropdownExport } from "./dropdown-export";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<ProductType[]>([]);
-
-  // TODO: Add spinner for the reload job
-  useEffect(() => {
-    const token = localStorage.getItem("token") ?? "";
+  const token =
+    typeof window !== "undefined" ? (localStorage.getItem("token") ?? "") : "";
+  const fetchProducts = () => {
     getProducts(token).then(setProducts).catch(console.error);
+  };
+  useEffect(() => {
+    fetchProducts();
   }, []);
 
   return (
@@ -45,6 +47,7 @@ export default function ProductsPage() {
                       + New Product
                     </Button>
                   }
+                  onSuccess={fetchProducts}
                 />
               </div>
             </div>

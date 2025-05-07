@@ -19,7 +19,7 @@ export const createProduct = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const { name, sku, price } = req.body;
+    const { name, sku, price, cost_price, description, barcode } = req.body;
 
     const product = await prisma.product.create({
       data: {
@@ -27,6 +27,9 @@ export const createProduct = async (req, res, next) => {
         name: name,
         sku: sku,
         price: price,
+        cost_price: cost_price,
+        description: description,
+        barcode: barcode,
       },
     });
     return res.status(201).json(normalizeProduct(product));
@@ -70,7 +73,7 @@ export const getProductById = async (req, res, next) => {
 export const updateProduct = async (req, res, next) => {
   try {
     const id = BigInt(req.params.id);
-    const { name, sku, price } = req.body;
+    const { name, sku, price, cost_price, description, barcode } = req.body;
     const updated = await prisma.product.update({
       where: {
         id: id,
@@ -79,6 +82,9 @@ export const updateProduct = async (req, res, next) => {
         name,
         sku,
         price,
+        cost_price,
+        description,
+        barcode,
       },
     });
     if (!updated) {
