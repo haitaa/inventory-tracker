@@ -2,6 +2,11 @@ import { PrismaClient, Prisma } from "@prisma/client";
 import fs from "fs/promises";
 import path from "path";
 
+/**
+ * Yardımcı fonksiyon: BigInt ID değerlerini normal string'e dönüştürür
+ * @param {object} product - Dönüştürülecek ürün nesnesi
+ * @returns {object} - ID'leri string'e dönüştürülmüş ürün nesnesi
+ */
 const normalizeProduct = (product) => ({
   ...product,
   id: product.id.toString(),
@@ -10,11 +15,22 @@ const normalizeProduct = (product) => ({
 
 const prisma = new PrismaClient();
 
-// Resim URL'sini oluşturmak için yardımcı fonksiyon
+/**
+ * Yardımcı fonksiyon: Ürün resmi için URL oluşturur
+ * @param {string} filename - Dosya adı
+ * @returns {string} - Oluşturulan URL
+ */
 const getImageUrl = (filename) => {
   return `/uploads/products/${filename}`;
 };
 
+/**
+ * Yeni ürün oluşturur.
+ * @param {Request} req - Express request nesnesi
+ * @param {Response} res - Express response nesnesi
+ * @param {NextFunction} next - Express next middleware fonksiyonu
+ * @returns {Promise<Response>} - Oluşturulan ürün bilgisi veya hata mesajı
+ */
 export const createProduct = async (req, res, next) => {
   try {
     const userId = BigInt(req.userId);
@@ -80,6 +96,13 @@ export const createProduct = async (req, res, next) => {
   }
 };
 
+/**
+ * Tüm ürünleri getirir.
+ * @param {Request} req - Express request nesnesi
+ * @param {Response} res - Express response nesnesi
+ * @param {NextFunction} next - Express next middleware fonksiyonu
+ * @returns {Promise<Response>} - Ürün listesi veya hata mesajı
+ */
 export const getProducts = async (req, res, next) => {
   try {
     const products = await prisma.product.findMany();
@@ -89,6 +112,13 @@ export const getProducts = async (req, res, next) => {
   }
 };
 
+/**
+ * ID'ye göre ürün getirir.
+ * @param {Request} req - Express request nesnesi
+ * @param {Response} res - Express response nesnesi
+ * @param {NextFunction} next - Express next middleware fonksiyonu
+ * @returns {Promise<Response>} - Ürün bilgisi veya hata mesajı
+ */
 export const getProductById = async (req, res, next) => {
   try {
     const id = BigInt(req.params.id);
@@ -106,9 +136,17 @@ export const getProductById = async (req, res, next) => {
   }
 };
 
+/**
+ * Ürün bilgilerini günceller. Sadece ürün sahibi güncelleyebilir.
+ * @param {Request} req - Express request nesnesi
+ * @param {Response} res - Express response nesnesi
+ * @param {NextFunction} next - Express next middleware fonksiyonu
+ * @returns {Promise<Response>} - Güncellenmiş ürün bilgisi veya hata mesajı
+ */
 export const updateProduct = async (req, res, next) => {
   try {
     const id = BigInt(req.params.id);
+    const userId = BigInt(req.userId);
     const { name, sku, price, cost_price, description, barcode } = req.body;
 
     // Mevcut ürünü bul
@@ -122,6 +160,17 @@ export const updateProduct = async (req, res, next) => {
         await fs.unlink(req.file.path);
       }
       return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Kullanıcının ürün sahibi olup olmadığını kontrol et
+    if (existingProduct.userId !== userId) {
+      // Yeni yüklenen dosyayı temizle
+      if (req.file) {
+        await fs.unlink(req.file.path);
+      }
+      return res
+        .status(403)
+        .json({ message: "Sadece ürün sahibi güncelleyebilir" });
     }
 
     // Resim kontrolü
@@ -172,9 +221,17 @@ export const updateProduct = async (req, res, next) => {
   }
 };
 
+/**
+ * Ürünü siler. Sadece ürün sahibi silebilir.
+ * @param {Request} req - Express request nesnesi
+ * @param {Response} res - Express response nesnesi
+ * @param {NextFunction} next - Express next middleware fonksiyonu
+ * @returns {Promise<Response>} - Başarı durumu veya hata mesajı
+ */
 export const deleteProduct = async (req, res, next) => {
   try {
     const id = BigInt(req.params.id);
+    const userId = BigInt(req.userId);
 
     // Ürünü bul
     const product = await prisma.product.findUnique({
@@ -183,6 +240,11 @@ export const deleteProduct = async (req, res, next) => {
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Kullanıcının ürün sahibi olup olmadığını kontrol et
+    if (product.userId !== userId) {
+      return res.status(403).json({ message: "Sadece ürün sahibi silebilir" });
     }
 
     // Ürünü sil
@@ -211,10 +273,17 @@ export const deleteProduct = async (req, res, next) => {
   }
 };
 
-// Ürün resmi yükleme/güncelleme
+/**
+ * Ürüne resim ekler veya mevcut resmi günceller. Sadece ürün sahibi ekleyebilir.
+ * @param {Request} req - Express request nesnesi (resim dosyası req.file içinde bulunmalı)
+ * @param {Response} res - Express response nesnesi
+ * @param {NextFunction} next - Express next middleware fonksiyonu
+ * @returns {Promise<Response>} - Güncellenmiş ürün bilgisi veya hata mesajı
+ */
 export const uploadProductImage = async (req, res, next) => {
   try {
     const id = BigInt(req.params.id);
+    const userId = BigInt(req.userId);
 
     if (!req.file) {
       return res.status(400).json({ message: "Resim dosyası bulunamadı" });
@@ -229,6 +298,15 @@ export const uploadProductImage = async (req, res, next) => {
       // Yüklenen dosyayı temizle
       await fs.unlink(req.file.path);
       return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Kullanıcının ürün sahibi olup olmadığını kontrol et
+    if (existingProduct.userId !== userId) {
+      // Yüklenen dosyayı temizle
+      await fs.unlink(req.file.path);
+      return res
+        .status(403)
+        .json({ message: "Sadece ürün sahibi resim ekleyebilir" });
     }
 
     // Eski resmi sil (varsa)
@@ -266,10 +344,17 @@ export const uploadProductImage = async (req, res, next) => {
   }
 };
 
-// Ürün resmini silme
+/**
+ * Ürün resmini siler. Sadece ürün sahibi silebilir.
+ * @param {Request} req - Express request nesnesi
+ * @param {Response} res - Express response nesnesi
+ * @param {NextFunction} next - Express next middleware fonksiyonu
+ * @returns {Promise<Response>} - Güncellenmiş ürün bilgisi veya hata mesajı
+ */
 export const deleteProductImage = async (req, res, next) => {
   try {
     const id = BigInt(req.params.id);
+    const userId = BigInt(req.userId);
 
     // Ürünü bul
     const product = await prisma.product.findUnique({
@@ -278,6 +363,13 @@ export const deleteProductImage = async (req, res, next) => {
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Kullanıcının ürün sahibi olup olmadığını kontrol et
+    if (product.userId !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Sadece ürün sahibi resim silebilir" });
     }
 
     // Resim var mı kontrol et
@@ -303,6 +395,35 @@ export const deleteProductImage = async (req, res, next) => {
     });
 
     return res.status(200).json(normalizeProduct(updated));
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Ürün istatistiklerini getirir. Giriş yapmış kullanıcının sadece kendi ürünlerinin sayısını döndürür.
+ * @param {Request} req - Express request nesnesi
+ * @param {Response} res - Express response nesnesi
+ * @param {NextFunction} next - Express next middleware fonksiyonu
+ * @returns {Promise<Response>} - Ürün istatistikleri veya hata mesajı
+ */
+export const getProductStats = async (req, res, next) => {
+  try {
+    // Kullanıcı kimliğini al
+    const userId = req.userId ? BigInt(req.userId) : null;
+
+    // Eğer kullanıcı girişi yapılmışsa sadece o kullanıcının ürünlerini say
+    const totalProducts = await prisma.product.count({
+      where: userId
+        ? {
+            userId: userId,
+          }
+        : undefined,
+    });
+
+    return res.status(200).json({
+      totalProducts,
+    });
   } catch (error) {
     next(error);
   }

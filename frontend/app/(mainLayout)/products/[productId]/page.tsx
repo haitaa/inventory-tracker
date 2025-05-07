@@ -4,11 +4,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/app/lib/api";
-import { ProductType } from "@/app/lib/productService";
-import {
-  getInventoryTransactionsByProduct,
-  InventoryTransactionType,
-} from "@/app/lib/inventoryTransactionService";
+import { ProductType, InventoryTransactionType } from "@/types/schema";
+import { getInventoryTransactionsByProduct } from "@/app/lib/inventoryTransactionService";
 import { ProductChart } from "@/components/ProductChart";
 import InventoryTransactions from "../inventory-transactions";
 import { Button } from "@/components/ui/button";

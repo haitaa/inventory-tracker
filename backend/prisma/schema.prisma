@@ -7,22 +7,203 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model Product {
-  id          BigInt   @id @default(autoincrement())
-  userId      BigInt?
-  user        User?    @relation(fields: [userId], references: [id])
+model Category {
+  id          BigInt     @id @default(autoincrement())
   name        String
-  sku         String   @unique
-  price       Float
-  cost_price  Float?
+  slug        String     @unique
   description String?
-  barcode     String?
-  imageUrl    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  parentId    BigInt?
+  parent      Category?  @relation("CategoryToSubcategory", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryToSubcategory")
+  products    Product[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
 
+model Brand {
+  id          BigInt    @id @default(autoincrement())
+  name        String    @unique
+  slug        String    @unique
+  logo        String?
+  description String?
+  website     String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Supplier {
+  id          BigInt    @id @default(autoincrement())
+  name        String
+  contactName String?
+  email       String?
+  phone       String?
+  address     String?
+  website     String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ProductAttribute {
+  id        BigInt                  @id @default(autoincrement())
+  name      String
+  values    ProductAttributeValue[]
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+}
+
+model ProductAttributeValue {
+  id          BigInt                    @id @default(autoincrement())
+  value       String
+  attributeId BigInt
+  attribute   ProductAttribute          @relation(fields: [attributeId], references: [id])
+  products    ProductToAttributeValue[]
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+}
+
+model ProductToAttributeValue {
+  productId        BigInt
+  attributeValueId BigInt
+  product          Product               @relation(fields: [productId], references: [id])
+  attributeValue   ProductAttributeValue @relation(fields: [attributeValueId], references: [id])
+  ProductVariant   ProductVariant?       @relation(fields: [productVariantId], references: [id])
+  productVariantId BigInt?
+
+  @@id([productId, attributeValueId])
+}
+
+model Tag {
+  id       BigInt    @id @default(autoincrement())
+  name     String    @unique
+  slug     String    @unique
+  products Product[]
+}
+
+model Product {
+  id                BigInt         @id @default(autoincrement())
+  userId            BigInt?
+  user              User?          @relation(fields: [userId], references: [id])
+  name              String
+  slug              String?        @unique
+  sku               String         @unique
+  price             Float
+  cost_price        Float?
+  compareAtPrice    Float? // Eski/liste fiyatı (indirim göstermek için)
+  description       String?
+  short_description String? // Kısa açıklama
+  barcode           String?
+  imageUrl          String?
+  additionalImages  ProductImage[] // Ek ürün resimleri
+
+  // Kategori ilişkisi
+  categoryId BigInt?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  // Marka ilişkisi
+  brandId BigInt?
+  brand   Brand?  @relation(fields: [brandId], references: [id])
+
+  // Tedarikçi ilişkisi
+  supplierId BigInt?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+
+  // Fiziksel özellikler
+  weight Float? // ağırlık (gr)
+  width  Float? // genişlik (cm)
+  height Float? // yükseklik (cm)
+  length Float? // uzunluk (cm)
+
+  // Stok yönetimi
+  minStockLevel Int? // Minimum stok seviyesi (uyarı için)
+  maxStockLevel Int? // Maksimum stok seviyesi
+
+  // Durum
+  status     ProductStatus     @default(ACTIVE)
+  visibility ProductVisibility @default(VISIBLE)
+  featured   Boolean           @default(false)
+
+  // Vergi
+  taxable Boolean @default(true)
+  taxRate Float?
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
+
+  // Barkod seçenekleri
+  isbn String? // Kitaplar için
+  mpn  String? // Üretici parça numarası
+  gtin String? // Global Ticaret Ürün Numarası
+
+  // İlişkiler
+  tags             Tag[]
+  attributeValues  ProductToAttributeValue[]
+  variants         ProductVariant[]
+  relatedProducts  ProductRelation[]         @relation("ProductToRelated")
+  relatingProducts ProductRelation[]         @relation("RelatedToProduct")
+
+  // Mevcut ilişkiler
   InventoryTransaction InventoryTransaction[]
   Stock                Stock[]
+
+  // Zaman damgaları
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductImage {
+  id        BigInt   @id @default(autoincrement())
+  productId BigInt
+  product   Product  @relation(fields: [productId], references: [id])
+  url       String
+  alt       String?
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductVariant {
+  id              BigInt                    @id @default(autoincrement())
+  productId       BigInt
+  product         Product                   @relation(fields: [productId], references: [id])
+  sku             String                    @unique
+  price           Float?
+  cost_price      Float?
+  imageUrl        String?
+  stock           Int                       @default(0)
+  attributeValues ProductToAttributeValue[]
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+}
+
+model ProductRelation {
+  productId        BigInt
+  relatedProductId BigInt
+  product          Product      @relation("ProductToRelated", fields: [productId], references: [id])
+  relatedProduct   Product      @relation("RelatedToProduct", fields: [relatedProductId], references: [id])
+  type             RelationType @default(RELATED)
+
+  @@id([productId, relatedProductId])
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum ProductVisibility {
+  VISIBLE
+  HIDDEN
+}
+
+enum RelationType {
+  RELATED
+  UPSELL
+  CROSS_SELL
 }
 
 model InventoryTransaction {
@@ -73,7 +254,100 @@ model User {
   products              Product[]
   inventoryTransactions InventoryTransaction[]
   stock                 Stock[]
+  orders                Order[] // Kullanıcının siparişleri
+  customers             Customer[] // Kullanıcının müşterileri
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Müşteri modeli
+model Customer {
+  id         BigInt  @id @default(autoincrement())
+  userId     BigInt // Hangi kullanıcıya ait müşteri
+  user       User    @relation(fields: [userId], references: [id])
+  firstName  String
+  lastName   String
+  email      String?
+  phone      String?
+  address    String?
+  city       String?
+  state      String?
+  postalCode String?
+  country    String?
+  notes      String?
+  orders     Order[] // Müşterinin siparişleri
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, email])
+}
+
+// Sipariş durumu için enum
+enum OrderStatusType {
+  PENDING // Beklemede
+  PROCESSING // İşleniyor
+  SHIPPED // Kargoya verildi
+  DELIVERED // Teslim edildi
+  CANCELLED // İptal edildi
+  RETURNED // İade edildi
+  COMPLETED // Tamamlandı
+}
+
+// Ödeme tipi için enum
+enum PaymentType {
+  CASH // Nakit
+  CREDIT_CARD // Kredi kartı
+  BANK_TRANSFER // Banka havalesi
+  OTHER // Diğer
+}
+
+// Sipariş modeli
+model Order {
+  id            BigInt          @id @default(autoincrement())
+  orderNumber   String          @unique // Tekil sipariş numarası
+  userId        BigInt // Siparişi oluşturan kullanıcı
+  user          User            @relation(fields: [userId], references: [id])
+  customerId    BigInt // Müşteri
+  customer      Customer        @relation(fields: [customerId], references: [id])
+  status        OrderStatusType @default(PENDING) // Sipariş durumu
+  paymentType   PaymentType     @default(CASH) // Ödeme tipi
+  paymentStatus Boolean         @default(false) // Ödeme durumu
+  shippingFee   Float? // Kargo ücreti
+  tax           Float? // Vergi tutarı
+  discount      Float? // İndirim tutarı
+  totalAmount   Float // Toplam tutar
+  notes         String? // Notlar
+  items         OrderItem[] // Sipariş kalemleri
+
+  // Kargo bilgileri
+  shippingAddress String?
+  trackingNumber  String?
+  carrierName     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Sipariş kalemi modeli
+model OrderItem {
+  id          BigInt  @id @default(autoincrement())
+  orderId     BigInt // Hangi siparişe ait
+  order       Order   @relation(fields: [orderId], references: [id])
+  productId   BigInt // Ürün ID
+  productName String // Ürün adı (ürün silinse bile sipariş detayı kalmalı)
+  productSku  String // Ürün SKU
+  quantity    Int // Adet
+  unitPrice   Float // Birim fiyat
+  taxRate     Float? // Vergi oranı
+  discount    Float? // İndirim tutarı
+  totalPrice  Float // Toplam fiyat (miktar * birim fiyat)
+  notes       String? // Özel notlar
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([productId])
 }

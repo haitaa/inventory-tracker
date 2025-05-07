@@ -1,19 +1,5 @@
 import api from "@/app/lib/api";
-
-enum TransactionType {
-  IN = "IN",
-  OUT = "OUT",
-}
-
-export interface InventoryTransactionType {
-  id: string;
-  type: TransactionType;
-  quantity: number;
-  productId: string;
-  warehouseId: string;
-  userId: string;
-  createdAt: string;
-}
+import { InventoryTransactionType, TransactionTypeEnum } from "@/types/schema";
 
 export const getInventoryTransactionsByProduct = async (
   token: string,

@@ -7,6 +7,8 @@ import inventoryRouter from "./routes/inventory-service/inventoryRoute.js";
 import authRouter from "./routes/auth-service/authRoute.js";
 import userRouter from "./routes/user-service/userRoute.js";
 import fileImportRouter from "./routes/file-service/fileRoute.js";
+import customerRouter from "./routes/customer-service/customerRoute.js";
+import orderRouter from "./routes/order-service/orderRoute.js";
 
 const app = express();
 
@@ -15,7 +17,7 @@ app.use(
   cors({
     origin: "http://localhost:3000", // Frontend URL'si
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -27,6 +29,8 @@ app.use("/auth", authRouter);
 app.use("/products", productRouter);
 app.use("/inventory", inventoryRouter);
 app.use("/user", userRouter);
+app.use("/customers", customerRouter);
+app.use("/orders", orderRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT} ${NODE_ENV}`);
