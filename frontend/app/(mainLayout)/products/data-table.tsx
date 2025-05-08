@@ -143,11 +143,13 @@ export function DataTable<TData, TValue>({
   // Filtre uygulama fonksiyonu
   const applyFilters = () => {
     // Kategori filtresi
+    /* Kategori kolonu olmadığı için yorum satırına aldım
     if (activeFilters.category) {
       table.getColumn("category")?.setFilterValue(activeFilters.category);
     } else {
       table.getColumn("category")?.setFilterValue(undefined);
     }
+    */
 
     // Fiyat filtresi
     if (
@@ -165,6 +167,7 @@ export function DataTable<TData, TValue>({
     }
 
     // Stok filtresi
+    /* Stock kolonu olmadığı için yorum satırına aldım
     if (
       activeFilters.stockMin !== undefined ||
       activeFilters.stockMax !== undefined ||
@@ -178,6 +181,7 @@ export function DataTable<TData, TValue>({
     } else {
       table.getColumn("stock")?.setFilterValue(undefined);
     }
+    */
   };
 
   // Filtreleri temizleme

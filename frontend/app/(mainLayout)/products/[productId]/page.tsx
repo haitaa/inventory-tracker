@@ -41,6 +41,8 @@ import {
   AlertCircle,
   LayoutGrid,
   LineChart,
+  Plus,
+  Minus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -55,6 +57,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { Progress } from "@/components/ui/progress";
+import { InventoryTransactionModal } from "@/components/InventoryTransactionModal";
 
 function GeneralSection({
   product,
@@ -64,6 +67,12 @@ function GeneralSection({
   transactions: InventoryTransactionType[];
 }) {
   const router = useRouter();
+  // Stok işlemleri için modal state
+  const [stockModalOpen, setStockModalOpen] = useState(false);
+  const [stockTransactionType, setStockTransactionType] = useState<
+    "IN" | "OUT"
+  >("IN");
+
   // Hesaplanan stok adedi
   const currentStock = transactions.reduce(
     (tot, tx) => (tx.type === "IN" ? tot + tx.quantity : tot - tx.quantity),
@@ -118,6 +127,26 @@ function GeneralSection({
       return dateB - dateA;
     })
     .slice(0, 5);
+
+  // Modal işlemleri
+  const openAddStockModal = () => {
+    setStockTransactionType("IN");
+    setStockModalOpen(true);
+  };
+
+  const openRemoveStockModal = () => {
+    setStockTransactionType("OUT");
+    setStockModalOpen(true);
+  };
+
+  const closeStockModal = () => {
+    setStockModalOpen(false);
+  };
+
+  const handleStockSuccess = () => {
+    // Sayfa verilerini yenile
+    window.location.reload();
+  };
 
   return (
     <motion.div
@@ -352,64 +381,206 @@ function GeneralSection({
               </CardHeader>
               <CardContent className="pt-2 space-y-4">
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center gap-2">
-                    <p className="text-sm font-medium">Güncel Stok Seviyesi:</p>
-                    <Badge
-                      variant="outline"
-                      className={`${
-                        currentStock === 0
-                          ? "bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400"
-                          : currentStock < 5
-                            ? "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400"
-                            : "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400"
-                      }`}
-                    >
-                      {currentStock} Adet
-                    </Badge>
+                  <div className="flex flex-wrap gap-4 justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">Güncel Stok:</p>
+                      <Badge
+                        variant="outline"
+                        className={`${
+                          currentStock === 0
+                            ? "bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400"
+                            : currentStock < 5
+                              ? "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400"
+                              : "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400"
+                        }`}
+                      >
+                        {currentStock} Adet
+                      </Badge>
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      {product.minStockLevel && (
+                        <div className="flex items-center gap-1 text-xs">
+                          <span className="text-muted-foreground">
+                            Min. Stok:
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className="bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400"
+                          >
+                            {product.minStockLevel} Adet
+                          </Badge>
+                        </div>
+                      )}
+
+                      {product.maxStockLevel && (
+                        <div className="flex items-center gap-1 text-xs">
+                          <span className="text-muted-foreground">
+                            Max. Stok:
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className="bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400"
+                          >
+                            {product.maxStockLevel} Adet
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <Progress
-                    value={Math.min(currentStock * 10, 100)}
-                    className="h-2"
-                  />
+                  <div className="relative pt-1">
+                    <div className="flex mb-2 items-center justify-between">
+                      <div>
+                        <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-teal-600 bg-teal-50">
+                          Stok Seviyesi
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-semibold inline-block text-teal-600">
+                          {product.maxStockLevel
+                            ? `${Math.floor((currentStock / product.maxStockLevel) * 100)}%`
+                            : `${Math.min(currentStock * 5, 100)}%`}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="relative">
+                      {/* Min stok çizgisi */}
+                      {product.minStockLevel && (
+                        <div
+                          className="absolute bottom-0 h-4 w-px bg-amber-500 z-10"
+                          style={{
+                            left: `${
+                              product.maxStockLevel
+                                ? Math.min(
+                                    Math.floor(
+                                      (product.minStockLevel /
+                                        product.maxStockLevel) *
+                                        100
+                                    ),
+                                    100
+                                  )
+                                : Math.min(product.minStockLevel * 5, 100)
+                            }%`,
+                          }}
+                        >
+                          <div className="absolute -top-5 -left-8 text-xs text-amber-600">
+                            Min
+                          </div>
+                        </div>
+                      )}
+
+                      <Progress
+                        value={
+                          product.maxStockLevel
+                            ? Math.min(
+                                Math.floor(
+                                  (currentStock / product.maxStockLevel) * 100
+                                ),
+                                100
+                              )
+                            : Math.min(currentStock * 5, 100)
+                        }
+                        className="h-4 bg-gray-100"
+                      />
+                    </div>
+                  </div>
 
                   <div className="bg-gray-50 dark:bg-gray-800/50 rounded-md p-3 mt-2">
-                    <h4 className="text-sm font-medium mb-2">
-                      Son Stok Hareketleri
-                    </h4>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium">
+                        Son Stok Hareketleri
+                      </h4>
+                      {transactions.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            document.getElementById("inventory-tab")?.click()
+                          }
+                          className="h-8 text-xs px-2 text-muted-foreground hover:text-foreground"
+                        >
+                          Tümünü Gör
+                        </Button>
+                      )}
+                    </div>
+
                     {recentTransactions.length > 0 ? (
                       <div className="space-y-2">
-                        {recentTransactions.map((tx) => (
-                          <div
-                            key={tx.id}
-                            className="flex justify-between items-center text-sm border-b border-gray-100 dark:border-gray-700 pb-2 last:pb-0 last:border-0"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Badge
-                                variant={
-                                  tx.type === "IN" ? "default" : "destructive"
-                                }
-                                className="w-16 justify-center"
-                              >
-                                {tx.type === "IN" ? "Giriş" : "Çıkış"}
-                              </Badge>
-                              <span>{tx.quantity} Adet</span>
+                        {recentTransactions.map((tx) => {
+                          const isStockIn = tx.type === "IN";
+                          return (
+                            <div
+                              key={tx.id}
+                              className="flex justify-between items-center text-sm border-b border-gray-100 dark:border-gray-700 pb-2 last:pb-0 last:border-0"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant={
+                                    isStockIn ? "default" : "destructive"
+                                  }
+                                  className={`w-16 justify-center ${
+                                    isStockIn
+                                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                      : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                  }`}
+                                >
+                                  {isStockIn ? "Giriş" : "Çıkış"}
+                                </Badge>
+                                <span className="font-medium">
+                                  {tx.quantity} Adet
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                {tx.warehouse?.name && (
+                                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">
+                                    {tx.warehouse.name}
+                                  </span>
+                                )}
+                                <span>
+                                  {tx.createdAt
+                                    ? format(
+                                        new Date(tx.createdAt),
+                                        "d MMM yyyy",
+                                        {
+                                          locale: tr,
+                                        }
+                                      )
+                                    : "Tarih yok"}
+                                </span>
+                              </div>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {tx.createdAt
-                                ? format(new Date(tx.createdAt), "d MMM yyyy", {
-                                    locale: tr,
-                                  })
-                                : "Tarih yok"}
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="text-center py-2 text-sm text-muted-foreground">
                         Henüz stok hareketi bulunmuyor.
                       </div>
                     )}
+
+                    {/* Hızlı stok işlemi butonları */}
+                    <div className="mt-4 flex gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 flex-1"
+                        onClick={openAddStockModal}
+                      >
+                        <Plus className="h-4 w-4" />
+                        Stok Ekle
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 flex-1"
+                        onClick={openRemoveStockModal}
+                      >
+                        <Minus className="h-4 w-4" />
+                        Stok Çıkar
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -417,6 +588,15 @@ function GeneralSection({
           </div>
         </motion.div>
       </div>
+
+      {/* Stok işlemleri için modal */}
+      <InventoryTransactionModal
+        isOpen={stockModalOpen}
+        onClose={closeStockModal}
+        productId={product.id}
+        transactionType={stockTransactionType}
+        onSuccess={handleStockSuccess}
+      />
 
       {/* Sekmeli alt alan */}
       <motion.div variants={itemVariants}>
@@ -426,7 +606,7 @@ function GeneralSection({
               <LineChart className="h-4 w-4" />
               Stok Grafiği
             </TabsTrigger>
-            <TabsTrigger value="inventory" className="gap-2">
+            <TabsTrigger id="inventory-tab" value="inventory" className="gap-2">
               <LayoutGrid className="h-4 w-4" />
               Tüm Hareketler
             </TabsTrigger>
@@ -442,7 +622,10 @@ function GeneralSection({
               </CardHeader>
               <CardContent className="pt-2">
                 <div className="h-80 w-full">
-                  <ProductChart transactions={transactions} />
+                  <ProductChart
+                    transactions={transactions}
+                    minStockLevel={product.minStockLevel}
+                  />
                 </div>
               </CardContent>
             </Card>

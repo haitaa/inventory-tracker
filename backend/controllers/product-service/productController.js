@@ -428,3 +428,38 @@ export const getProductStats = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Kullanıcıya ait ürünleri arar ve filtreler.
+ * @param {Request} req - Express request nesnesi
+ * @param {Response} res - Express response nesnesi
+ * @param {NextFunction} next - Express next middleware fonksiyonu
+ * @returns {Promise<Response>} - Filtrelenmiş ürün listesi veya hata mesajı
+ */
+export const searchProducts = async (req, res, next) => {
+  try {
+    const userId = BigInt(req.userId);
+    const searchQuery = req.query.q || "";
+
+    // Arama kriterlerine göre ürünleri getir
+    const products = await prisma.product.findMany({
+      where: {
+        userId: userId, // Sadece kullanıcıya ait ürünler
+        OR: [
+          // İsim, barkod veya SKU'da arama yap
+          { name: { contains: searchQuery, mode: "insensitive" } },
+          { barcode: { contains: searchQuery, mode: "insensitive" } },
+          { sku: { contains: searchQuery, mode: "insensitive" } },
+        ],
+      },
+      take: 10, // En fazla 10 sonuç döndür
+      orderBy: {
+        name: "asc", // İsme göre sırala
+      },
+    });
+
+    return res.status(200).json(products.map(normalizeProduct));
+  } catch (error) {
+    next(error);
+  }
+};

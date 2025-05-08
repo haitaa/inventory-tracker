@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { httpError } from "../../utils/httpError.js";
 
 const prisma = new PrismaClient();
 
@@ -84,19 +85,38 @@ export const createCustomer = async (req, res, next) => {
  */
 export const getCustomers = async (req, res, next) => {
   try {
-    const userId = BigInt(req.userId);
+    // userId değeri kontrol ediliyor
+    if (!req.userId) {
+      return next(httpError(401, "Yetkilendirme gerekli"));
+    }
 
     const customers = await prisma.customer.findMany({
-      where: {
-        userId,
-      },
-      orderBy: {
-        createdAt: "desc",
+      where: { userId: BigInt(req.userId) },
+      // Sadece var olan alanları seç
+      select: {
+        id: true,
+        userId: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+        city: true,
+        state: true,
+        postalCode: true,
+        country: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
-    return res.status(200).json(customers.map(normalizeCustomer));
+    // BigInt değerlerini string'e dönüştür
+    const normalizedCustomers = customers.map(normalizeCustomer);
+
+    res.json(normalizedCustomers);
   } catch (error) {
+    console.error("getCustomers error:", error);
     next(error);
   }
 };
@@ -110,28 +130,54 @@ export const getCustomers = async (req, res, next) => {
  */
 export const getCustomerById = async (req, res, next) => {
   try {
-    const userId = BigInt(req.userId);
-    const id = BigInt(req.params.id);
+    // userId değeri kontrol ediliyor
+    if (!req.userId) {
+      return next(httpError(401, "Yetkilendirme gerekli"));
+    }
+
+    const { id } = req.params;
+
+    // ID değeri kontrol ediliyor
+    if (!id) {
+      return next(httpError(400, "Müşteri ID'si gerekli"));
+    }
 
     const customer = await prisma.customer.findUnique({
-      where: {
-        id,
+      where: { id: BigInt(id) },
+      // Sadece var olan alanları seç
+      select: {
+        id: true,
+        userId: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+        city: true,
+        state: true,
+        postalCode: true,
+        country: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
     if (!customer) {
-      return res.status(404).json({ message: "Müşteri bulunamadı" });
+      return next(httpError(404, "Müşteri bulunamadı"));
     }
 
-    // Sadece kendi müşterilerini görebilir
-    if (customer.userId !== userId) {
-      return res
-        .status(403)
-        .json({ message: "Bu müşteriye erişim izniniz yok" });
+    // Kullanıcı sadece kendi müşterilerini görebilir
+    if (customer.userId !== BigInt(req.userId)) {
+      return next(httpError(403, "Bu işlem için yetkiniz yok"));
     }
 
-    return res.status(200).json(normalizeCustomer(customer));
+    // BigInt değerlerini string'e dönüştür
+    const normalizedCustomer = normalizeCustomer(customer);
+
+    res.json(normalizedCustomer);
   } catch (error) {
+    console.error("getCustomerById error:", error);
     next(error);
   }
 };
@@ -145,8 +191,18 @@ export const getCustomerById = async (req, res, next) => {
  */
 export const updateCustomer = async (req, res, next) => {
   try {
+    // userId değeri kontrol ediliyor
+    if (!req.userId) {
+      return next(httpError(401, "Yetkilendirme gerekli"));
+    }
+
     const userId = BigInt(req.userId);
     const id = BigInt(req.params.id);
+
+    // ID değeri kontrol ediliyor
+    if (!req.params.id) {
+      return next(httpError(400, "Müşteri ID'si gerekli"));
+    }
 
     const {
       firstName,
@@ -159,24 +215,27 @@ export const updateCustomer = async (req, res, next) => {
       postalCode,
       country,
       notes,
+      emailConsent,
+      smsConsent,
+      phoneConsent,
+      preferredChannel,
+      companyName,
+      taxId,
+      tags,
     } = req.body;
 
     // Önce müşteriyi bul
     const customer = await prisma.customer.findUnique({
-      where: {
-        id,
-      },
+      where: { id },
     });
 
     if (!customer) {
-      return res.status(404).json({ message: "Müşteri bulunamadı" });
+      return next(httpError(404, "Müşteri bulunamadı"));
     }
 
     // Sadece kendi müşterilerini güncelleyebilir
     if (customer.userId !== userId) {
-      return res
-        .status(403)
-        .json({ message: "Bu müşteriyi güncelleme izniniz yok" });
+      return next(httpError(403, "Bu müşteriyi güncelleme izniniz yok"));
     }
 
     // E-posta değiştiyse ve varsa çakışma kontrolü yap
@@ -192,32 +251,43 @@ export const updateCustomer = async (req, res, next) => {
       });
 
       if (existingCustomer) {
-        return res.status(409).json({
-          message: "Bu e-posta adresiyle başka bir müşteri zaten var",
-        });
+        return next(
+          httpError(409, "Bu e-posta adresiyle başka bir müşteri zaten var")
+        );
       }
     }
 
+    // Güncelleme verilerini hazırla
+    const updateData = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      address,
+      city,
+      state,
+      postalCode,
+      country,
+      notes,
+    };
+
+    // CRM alanlarını ekle (varsa)
+    if (emailConsent !== undefined) updateData.emailConsent = emailConsent;
+    if (smsConsent !== undefined) updateData.smsConsent = smsConsent;
+    if (phoneConsent !== undefined) updateData.phoneConsent = phoneConsent;
+    if (preferredChannel) updateData.preferredChannel = preferredChannel;
+    if (companyName !== undefined) updateData.companyName = companyName;
+    if (taxId !== undefined) updateData.taxId = taxId;
+    if (tags) updateData.tags = tags;
+
     const updatedCustomer = await prisma.customer.update({
-      where: {
-        id,
-      },
-      data: {
-        firstName,
-        lastName,
-        email,
-        phone,
-        address,
-        city,
-        state,
-        postalCode,
-        country,
-        notes,
-      },
+      where: { id },
+      data: updateData,
     });
 
-    return res.status(200).json(normalizeCustomer(updatedCustomer));
+    return res.json(normalizeCustomer(updatedCustomer));
   } catch (error) {
+    console.error("updateCustomer error:", error);
     next(error);
   }
 };
@@ -231,25 +301,31 @@ export const updateCustomer = async (req, res, next) => {
  */
 export const deleteCustomer = async (req, res, next) => {
   try {
+    // userId değeri kontrol ediliyor
+    if (!req.userId) {
+      return next(httpError(401, "Yetkilendirme gerekli"));
+    }
+
     const userId = BigInt(req.userId);
     const id = BigInt(req.params.id);
 
+    // ID değeri kontrol ediliyor
+    if (!req.params.id) {
+      return next(httpError(400, "Müşteri ID'si gerekli"));
+    }
+
     // Önce müşteriyi bul
     const customer = await prisma.customer.findUnique({
-      where: {
-        id,
-      },
+      where: { id },
     });
 
     if (!customer) {
-      return res.status(404).json({ message: "Müşteri bulunamadı" });
+      return next(httpError(404, "Müşteri bulunamadı"));
     }
 
     // Sadece kendi müşterilerini silebilir
     if (customer.userId !== userId) {
-      return res
-        .status(403)
-        .json({ message: "Bu müşteriyi silme izniniz yok" });
+      return next(httpError(403, "Bu müşteriyi silme izniniz yok"));
     }
 
     // Müşterinin siparişleri var mı kontrol et
@@ -260,20 +336,19 @@ export const deleteCustomer = async (req, res, next) => {
     });
 
     if (orderCount > 0) {
-      return res.status(400).json({
-        message: "Bu müşteriye ait siparişler olduğu için silinemez",
-      });
+      return next(
+        httpError(400, "Bu müşteriye ait siparişler olduğu için silinemez")
+      );
     }
 
     // Müşteriyi sil
     await prisma.customer.delete({
-      where: {
-        id,
-      },
+      where: { id },
     });
 
     return res.status(204).send();
   } catch (error) {
+    console.error("deleteCustomer error:", error);
     next(error);
   }
 };
@@ -287,32 +362,23 @@ export const deleteCustomer = async (req, res, next) => {
  */
 export const getCustomerOrders = async (req, res, next) => {
   try {
-    const userId = BigInt(req.userId);
-    const id = BigInt(req.params.id);
+    const { id } = req.params;
 
-    // Önce müşteriyi bul
     const customer = await prisma.customer.findUnique({
-      where: {
-        id,
-      },
+      where: { id: BigInt(id) },
     });
 
     if (!customer) {
-      return res.status(404).json({ message: "Müşteri bulunamadı" });
+      return next(httpError(404, "Müşteri bulunamadı"));
     }
 
-    // Sadece kendi müşterilerinin siparişlerini görebilir
-    if (customer.userId !== userId) {
-      return res
-        .status(403)
-        .json({ message: "Bu müşterinin siparişlerine erişim izniniz yok" });
+    // Kullanıcı sadece kendi müşterilerini görebilir
+    if (customer.userId !== BigInt(req.userId)) {
+      return next(httpError(403, "Bu işlem için yetkiniz yok"));
     }
 
-    // Müşterinin siparişlerini getir
     const orders = await prisma.order.findMany({
-      where: {
-        customerId: id,
-      },
+      where: { customerId: BigInt(id) },
       include: {
         items: true,
       },
@@ -321,8 +387,63 @@ export const getCustomerOrders = async (req, res, next) => {
       },
     });
 
-    return res.status(200).json(orders);
+    res.json(orders);
   } catch (error) {
     next(error);
   }
 };
+
+/**
+ * Müşterinin yaşam boyu değerini hesaplar
+ * NOT: Bu fonksiyon şu anda veritabanında gerekli sütunlar olmadığı için devre dışı bırakılmıştır.
+ * Migration yapmadan önce aktifleştirmeyiniz.
+ */
+/*
+export const calculateLifetimeValue = async (req, res, next) => {
+  // Fonksiyon içeriği
+};
+*/
+
+/**
+ * Tüm müşterilerin segmentasyonunu yapar
+ * NOT: Bu fonksiyon şu anda veritabanında gerekli sütunlar olmadığı için devre dışı bırakılmıştır.
+ * Migration yapmadan önce aktifleştirmeyiniz.
+ */
+/*
+export const segmentAllCustomers = async (req, res, next) => {
+  // Fonksiyon içeriği
+};
+*/
+
+/**
+ * Belirli bir segmentteki tüm müşterileri döndürür
+ * NOT: Bu fonksiyon şu anda veritabanında gerekli sütunlar olmadığı için devre dışı bırakılmıştır.
+ * Migration yapmadan önce aktifleştirmeyiniz.
+ */
+/*
+export const getCustomersBySegment = async (req, res, next) => {
+  // Fonksiyon içeriği
+};
+*/
+
+/**
+ * Müşterinin iletişim kayıtlarını getirir
+ * NOT: Bu fonksiyon şu anda veritabanında gerekli tablo olmadığı için devre dışı bırakılmıştır.
+ * Migration yapmadan önce aktifleştirmeyiniz.
+ */
+/*
+export const getCustomerCommunicationLogs = async (req, res, next) => {
+  // Fonksiyon içeriği
+};
+*/
+
+/**
+ * Müşteriye yeni bir iletişim kaydı ekler
+ * NOT: Bu fonksiyon şu anda veritabanında gerekli tablo olmadığı için devre dışı bırakılmıştır.
+ * Migration yapmadan önce aktifleştirmeyiniz.
+ */
+/*
+export const addCommunicationLog = async (req, res, next) => {
+  // Fonksiyon içeriği
+};
+*/

@@ -1,5 +1,5 @@
 import api from "@/app/lib/api";
-import { CustomerType } from "@/types/schema";
+import { CommunicationLogEntry, CustomerSegmentEnum, CustomerType, OrderType, RFMData } from "@/types/schema";
 
 /**
  * Tüm müşterileri getirir.
@@ -60,8 +60,8 @@ export const deleteCustomer = async (id: string): Promise<void> => {
  * @param {string} id - Müşterinin ID'si
  * @returns {Promise<OrderType[]>} Müşterinin siparişleri
  */
-export const getCustomerOrders = async (id: string): Promise<any[]> => {
-  const response = await api.get<any[]>(`/customers/${id}/orders`);
+export const getCustomerOrders = async (id: string): Promise<OrderType[]> => {
+  const response = await api.get<OrderType[]>(`/customers/${id}/orders`);
   return response.data;
 };
 
@@ -72,4 +72,103 @@ export const getCustomerOrders = async (id: string): Promise<any[]> => {
  */
 export const getFullName = (customer: CustomerType): string => {
   return `${customer.firstName} ${customer.lastName}`;
+};
+
+// CRM İşlevselliği
+
+/**
+ * Müşterinin RFM verilerini hesaplar
+ * @param {string} customerId - Müşterinin ID'si
+ * @returns {Promise<RFMData>} RFM verileri
+ */
+export const calculateCustomerRFM = async (customerId: string): Promise<RFMData> => {
+  const response = await api.get<RFMData>(`/customers/${customerId}/rfm`);
+  return response.data;
+};
+
+/**
+ * Müşterinin segmentini günceller
+ * @param {string} customerId - Müşterinin ID'si
+ * @param {CustomerSegmentEnum} segment - Müşteri segmenti
+ * @returns {Promise<CustomerType>} Güncellenmiş müşteri bilgisi
+ */
+export const updateCustomerSegment = async (
+  customerId: string, 
+  segment: CustomerSegmentEnum
+): Promise<CustomerType> => {
+  return updateCustomer(customerId, { segment });
+};
+
+/**
+ * Tüm müşterilerin segmentlerini otomatik olarak hesaplar
+ * @returns {Promise<void>}
+ */
+export const segmentAllCustomers = async (): Promise<void> => {
+  await api.post('/customers/segment-all');
+};
+
+/**
+ * Müşterinin iletişim kayıtlarını getirir
+ * @param {string} customerId - Müşterinin ID'si
+ * @returns {Promise<CommunicationLogEntry[]>} İletişim kayıtları
+ */
+export const getCustomerCommunicationLogs = async (
+  customerId: string
+): Promise<CommunicationLogEntry[]> => {
+  const response = await api.get<CommunicationLogEntry[]>(`/customers/${customerId}/communication-logs`);
+  return response.data;
+};
+
+/**
+ * Müşteriye yeni bir iletişim kaydı ekler
+ * @param {string} customerId - Müşterinin ID'si
+ * @param {Omit<CommunicationLogEntry, "id" | "date">} log - İletişim kaydı
+ * @returns {Promise<CommunicationLogEntry>} Eklenen iletişim kaydı
+ */
+export const addCustomerCommunicationLog = async (
+  customerId: string,
+  log: Omit<CommunicationLogEntry, "id" | "date">
+): Promise<CommunicationLogEntry> => {
+  const response = await api.post<CommunicationLogEntry>(
+    `/customers/${customerId}/communication-logs`, 
+    log
+  );
+  return response.data;
+};
+
+/**
+ * Müşterinin yaşam boyu değerini hesaplar
+ * @param {string} customerId - Müşterinin ID'si
+ * @returns {Promise<number>} Yaşam boyu değer
+ */
+export const calculateCustomerLifetimeValue = async (
+  customerId: string
+): Promise<number> => {
+  const response = await api.get<{ value: number }>(`/customers/${customerId}/lifetime-value`);
+  return response.data.value;
+};
+
+/**
+ * Segmentine göre müşterileri filtreler
+ * @param {CustomerSegmentEnum} segment - Müşteri segmenti
+ * @returns {Promise<CustomerType[]>} Filtrelenmiş müşteri listesi
+ */
+export const getCustomersBySegment = async (
+  segment: CustomerSegmentEnum
+): Promise<CustomerType[]> => {
+  const response = await api.get<CustomerType[]>(`/customers/by-segment/${segment}`);
+  return response.data;
+};
+
+/**
+ * Müşterinin etiketlerini günceller
+ * @param {string} customerId - Müşterinin ID'si
+ * @param {string[]} tags - Etiketler
+ * @returns {Promise<CustomerType>} Güncellenmiş müşteri
+ */
+export const updateCustomerTags = async (
+  customerId: string,
+  tags: string[]
+): Promise<CustomerType> => {
+  return updateCustomer(customerId, { tags });
 }; 

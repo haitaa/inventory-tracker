@@ -174,6 +174,16 @@ export interface WarehouseType {
   id: string;
   name?: string;
   code?: string;
+  address?: string;
+  city?: string;
+  district?: string;
+  postalCode?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+  managerName?: string;
+  capacity?: number;
+  usedCapacity?: number;
   inventoryTransactions?: InventoryTransactionType[];
   stocks?: StockType[];
 }
@@ -253,6 +263,54 @@ export enum PaymentTypeEnum {
 }
 
 /**
+ * Müşteri segment türleri
+ */
+export enum CustomerSegmentEnum {
+  REGULAR = "REGULAR",
+  VIP = "VIP",
+  PREMIUM = "PREMIUM",
+  INACTIVE = "INACTIVE",
+  NEW = "NEW",
+  AT_RISK = "AT_RISK"
+}
+
+/**
+ * İletişim tercihleri
+ */
+export interface CommunicationPreferences {
+  emailConsent: boolean;
+  smsConsent: boolean;
+  phoneConsent: boolean;
+  preferredChannel: "EMAIL" | "SMS" | "PHONE" | "NONE";
+}
+
+/**
+ * RFM (Recency, Frequency, Monetary) verisi
+ */
+export interface RFMData {
+  recencyScore: number;
+  frequencyScore: number;
+  monetaryScore: number;
+  totalScore: number;
+  lastPurchaseDate?: string;
+  purchaseCount: number;
+  totalSpent: number;
+}
+
+/**
+ * İletişim kaydı
+ */
+export interface CommunicationLogEntry {
+  id: string;
+  date: string;
+  type: "EMAIL" | "SMS" | "PHONE" | "MEETING" | "OTHER";
+  subject: string;
+  content: string;
+  userId: string;
+  user?: UserType;
+}
+
+/**
  * Müşteriyi temsil eden tip
  */
 export interface CustomerType {
@@ -270,6 +328,19 @@ export interface CustomerType {
   country?: string;
   notes?: string;
   orders?: OrderType[];
+  
+  // CRM Özellikleri
+  segment?: CustomerSegmentEnum;
+  lifetimeValue?: number;
+  communicationPreferences?: CommunicationPreferences;
+  rfmData?: RFMData;
+  communicationLogs?: CommunicationLogEntry[];
+  tags?: string[];
+  companyName?: string;
+  taxId?: string;
+  birthDate?: string;
+  acquisitionSource?: string;
+  
   createdAt?: string;
   updatedAt?: string;
 }

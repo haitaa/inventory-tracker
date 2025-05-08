@@ -56,6 +56,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import SegmentationDashboard from "@/components/customer/SegmentationDashboard";
 
 export default function CustomersPage() {
   const router = useRouter();
@@ -206,13 +207,25 @@ export default function CustomersPage() {
     });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Müşteriler</h1>
-        <Button onClick={() => router.push("/customers/new")}>
-          <Plus className="mr-2 h-4 w-4" /> Müşteri Ekle
-        </Button>
+    <div className="space-y-6 bg-gray-50 dark:bg-gray-900/10 p-6 min-h-full rounded-lg">
+      <div className="flex flex-col space-y-2 md:space-y-0 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-indigo-700 to-blue-600 bg-clip-text text-transparent dark:from-indigo-400 dark:to-blue-400">
+            Müşteri Yönetimi
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Tüm müşterilerinizi yönetin ve müşteri ilişkilerinizi geliştirin
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <Button onClick={() => router.push("/customers/new")}>
+            <Plus className="mr-2 h-4 w-4" /> Müşteri Ekle
+          </Button>
+        </div>
       </div>
+
+      <SegmentationDashboard />
 
       {error && (
         <Alert variant="destructive">

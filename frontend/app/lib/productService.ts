@@ -174,3 +174,20 @@ export const getProductStats = async (token?: string): Promise<{ totalProducts: 
   const response = await api.get('/products/stats', { headers });
   return response.data;
 };
+
+/**
+ * Belirli bir isimdeki ürünleri arar veya getirmek için.
+ * @param query - Aranacak ürün adı veya barkod
+ * @returns {Promise<ProductType[]>} Bulunan ürünlerin listesi
+ */
+export const searchProductsByName = async (query: string): Promise<ProductType[]> => {
+  if (!query) return [];
+  
+  try {
+    const response = await api.get<ProductType[]>(`/products/search?q=${encodeURIComponent(query)}`);
+    return response.data;
+  } catch (error) {
+    console.error("Ürün arama hatası:", error);
+    return [];
+  }
+};

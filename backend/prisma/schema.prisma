@@ -242,6 +242,16 @@ model Warehouse {
   id                   BigInt                 @id @default(autoincrement())
   name                 String?
   code                 String?
+  address              String?
+  city                 String?
+  district             String?
+  postalCode           String?
+  country              String?
+  phone                String?
+  email                String?
+  managerName          String?
+  capacity             Int?
+  usedCapacity         Int?
   InventoryTransaction InventoryTransaction[]
   Stock                Stock[]
 }
@@ -257,9 +267,21 @@ model User {
   orders                Order[] // Kullanıcının siparişleri
   customers             Customer[] // Kullanıcının müşterileri
   orderLogs             OrderLog[] // Kullanıcının sipariş logları
+  communicationLogs     CommunicationLog[] // Kullanıcının iletişim kayıtları
+  stores                Store[] // Kullanıcının mağazaları
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Müşteri segment türleri için enum
+enum CustomerSegmentType {
+  REGULAR // Standart müşteri
+  VIP // VIP müşteri
+  PREMIUM // Premium müşteri
+  INACTIVE // Pasif müşteri
+  NEW // Yeni müşteri
+  AT_RISK // Risk altındaki müşteri
 }
 
 // Müşteri modeli
@@ -279,10 +301,40 @@ model Customer {
   notes      String?
   orders     Order[] // Müşterinin siparişleri
 
+  // CRM Özellikleri
+  segment           CustomerSegmentType? // Müşteri segmenti
+  lifetimeValue     Float? // Yaşam boyu değeri
+  rfmData           Json? // RFM analiz sonuçları
+  communicationLogs CommunicationLog[] // İletişim kayıtları
+  tags              String[] // Müşteri etiketleri
+  companyName       String? // Şirket adı (B2B müşteriler için)
+  taxId             String? // Vergi/TC kimlik numarası
+  birthDate         DateTime? // Doğum tarihi
+  emailConsent      Boolean              @default(false) // E-posta izni
+  smsConsent        Boolean              @default(false) // SMS izni
+  phoneConsent      Boolean              @default(false) // Telefon izni
+  preferredChannel  String?              @default("EMAIL") // Tercih edilen iletişim kanalı
+  acquisitionSource String? // Müşteri edinme kaynağı
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([userId, email])
+}
+
+// İletişim kayıtları modeli
+model CommunicationLog {
+  id         BigInt   @id @default(autoincrement())
+  customerId BigInt // Hangi müşteriye ait
+  customer   Customer @relation(fields: [customerId], references: [id])
+  userId     BigInt // İşlemi yapan kullanıcı
+  user       User     @relation(fields: [userId], references: [id])
+  type       String // İletişim türü: EMAIL, SMS, PHONE, MEETING, OTHER
+  subject    String // Konu
+  content    String // İçerik
+  date       DateTime @default(now()) // İletişim tarihi
+
+  @@index([customerId])
 }
 
 // Sipariş durumu için enum
@@ -399,4 +451,60 @@ model Payment {
 
   @@index([orderId])
   @@index([transactionId])
+}
+
+// Store modülleri
+
+// Mağaza şablonu (template) modeli
+model StoreTemplate {
+  id           BigInt   @id @default(autoincrement())
+  name         String
+  description  String?
+  thumbnail    String?
+  type         String // "e-commerce", "portfolio", "blog" vb.
+  defaultPages Json? // Varsayılan sayfa yapılandırmaları
+  components   Json? // Şablonda kullanılabilen bileşenler
+  isActive     Boolean  @default(true)
+  stores       Store[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Mağaza modeli
+model Store {
+  id            BigInt        @id @default(autoincrement())
+  userId        BigInt
+  user          User          @relation(fields: [userId], references: [id])
+  name          String
+  description   String?
+  logo          String?
+  favicon       String?
+  subdomain     String        @unique // site-adi.envanter-app.com
+  domain        String?       @unique // özel alan adı (isteğe bağlı)
+  templateId    BigInt
+  template      StoreTemplate @relation(fields: [templateId], references: [id])
+  customization Json? // Tema özelleştirmeleri
+  settings      Json? // Site ayarları
+  pages         StorePage[]
+  isActive      Boolean       @default(true)
+  isPublished   Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+// Mağaza sayfası modeli
+model StorePage {
+  id          BigInt   @id @default(autoincrement())
+  storeId     BigInt
+  store       Store    @relation(fields: [storeId], references: [id])
+  title       String
+  slug        String
+  content     Json? // Sayfa içeriği ve bileşenleri
+  seo         Json? // SEO meta verileri
+  isHomepage  Boolean  @default(false)
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([storeId, slug])
 }

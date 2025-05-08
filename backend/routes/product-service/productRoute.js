@@ -8,6 +8,7 @@ import {
   uploadProductImage,
   deleteProductImage,
   getProductStats,
+  searchProducts,
 } from "../../controllers/product-service/productController.js";
 import { requireAuth } from "../../middleware/authMiddleware.js";
 import { productImageUpload } from "../../utils/multerConfig.js";
@@ -47,6 +48,12 @@ productRouter.get("/", requireAuth, getProducts);
  * 'stats' kelimesini bir ID parametresi olarak yorumlar
  */
 productRouter.get("/stats", requireAuth, getProductStats);
+
+/**
+ * Ürün arama endpoint'i - GET /api/products/search?q=searchterm
+ * Bu rota, kullanıcıların ürünleri adına, barkoduna veya SKU'suna göre filtrelemesine olanak tanır
+ */
+productRouter.get("/search", requireAuth, searchProducts);
 
 /**
  * ID parametresi içeren rotalar

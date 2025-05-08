@@ -27,6 +27,7 @@ import {
 import { HiQuestionMarkCircle } from "react-icons/hi";
 import { FaArrowRightToBracket } from "react-icons/fa6";
 import { FiChevronRight, FiChevronDown, FiActivity } from "react-icons/fi";
+import { FaWarehouse } from "react-icons/fa";
 
 // Gruplandırılmış menü öğeleri tipini tanımlayalım
 type NavItem = {
@@ -64,6 +65,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Siparişler", href: "/orders", icon: LuShoppingBag, badge: 7 },
       { label: "Ürünler", href: "/products", icon: FaCube, badge: null },
+      { label: "Depolar", href: "/warehouses", icon: FaWarehouse, badge: null },
       {
         label: "Müşteriler",
         href: "/customers",
