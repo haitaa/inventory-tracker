@@ -12,10 +12,16 @@ import customerRouter from "./routes/customer-service/customerRoute.js";
 import orderRouter from "./routes/order-service/orderRoute.js";
 import paymentRouter from "./routes/paymentRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
+import dotenv from "dotenv";
+import storeBuilderApi from "./api/server.js";
+
+// .env dosyasını yükle
+dotenv.config();
 
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: "http://localhost:3000", // Frontend URL'si
@@ -37,10 +43,19 @@ app.use("/customers", customerRouter);
 app.use("/orders", orderRouter);
 app.use("/payments", paymentRouter);
 
+// Store Builder API'yi /store-builder yoluna monte et
+app.use("/store-builder", storeBuilderApi);
+
 // Hata işleme middleware'leri
 app.use(notFound); // 404 hataları için
 app.use(errorHandler); // Genel hata işleme
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT} ${NODE_ENV}`);
+});
+
+// Kapatma işlemlerini yönet
+process.on("SIGINT", () => {
+  console.log("Uygulama kapatılıyor");
+  process.exit(0);
 });
