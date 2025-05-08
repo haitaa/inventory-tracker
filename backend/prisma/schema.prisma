@@ -486,6 +486,7 @@ model Store {
   customization Json? // Tema özelleştirmeleri
   settings      Json? // Site ayarları
   pages         StorePage[]
+  themes        StoreTheme[]
   isActive      Boolean       @default(true)
   isPublished   Boolean       @default(false)
   createdAt     DateTime      @default(now())
@@ -494,17 +495,102 @@ model Store {
 
 // Mağaza sayfası modeli
 model StorePage {
-  id          BigInt   @id @default(autoincrement())
+  id          BigInt        @id @default(autoincrement())
   storeId     BigInt
-  store       Store    @relation(fields: [storeId], references: [id])
+  store       Store         @relation(fields: [storeId], references: [id])
   title       String
   slug        String
   content     Json? // Sayfa içeriği ve bileşenleri
   seo         Json? // SEO meta verileri
-  isHomepage  Boolean  @default(false)
-  isPublished Boolean  @default(true)
+  sections    PageSection[]
+  isHomepage  Boolean       @default(false)
+  isPublished Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@unique([storeId, slug])
+}
+
+// Bileşen Kategori modeli
+model ComponentCategory {
+  id          BigInt      @id @default(autoincrement())
+  name        String
+  description String?
+  icon        String?
+  slug        String      @unique
+  components  Component[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// Bileşen modeli
+model Component {
+  id                BigInt             @id @default(autoincrement())
+  name              String
+  description       String?
+  categoryId        BigInt
+  category          ComponentCategory  @relation(fields: [categoryId], references: [id])
+  type              String // "header", "footer", "hero", "product-card", "text-block" vb.
+  thumbnail         String?
+  schema            Json // Bileşenin yapılandırma şeması (JSON Schema formatında)
+  defaultProps      Json // Varsayılan özellikler
+  restrictions      Json? // Kullanım kısıtlamaları
+  isGlobal          Boolean            @default(false) // Tüm sayfalarda kullanılabilir mi?
+  isActive          Boolean            @default(true)
+  componentVersions ComponentVersion[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+// Bileşen Versiyon modeli
+model ComponentVersion {
+  id          BigInt        @id @default(autoincrement())
+  componentId BigInt
+  component   Component     @relation(fields: [componentId], references: [id])
+  version     String // Semantik versiyonlama (örn. "1.0.0")
+  template    String // Bileşenin HTML/React template yapısı
+  script      String? // Bileşenin JavaScript kodu
+  style       String? // Bileşenin CSS kodu
+  isActive    Boolean       @default(true)
+  sections    PageSection[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@unique([componentId, version])
+}
+
+// Sayfa Bölümü modeli
+model PageSection {
+  id                 BigInt           @id @default(autoincrement())
+  pageId             BigInt
+  page               StorePage        @relation(fields: [pageId], references: [id])
+  componentVersionId BigInt
+  componentVersion   ComponentVersion @relation(fields: [componentVersionId], references: [id])
+  name               String? // Bölüm adı (opsiyonel)
+  props              Json // Bileşene gönderilen özellikler
+  order              Int // Sayfadaki sırası
+  parentSectionId    BigInt? // Üst bölüm (nested yapılar için)
+  parentSection      PageSection?     @relation("SectionToSubsection", fields: [parentSectionId], references: [id])
+  childSections      PageSection[]    @relation("SectionToSubsection")
+  containerSettings  Json? // Container ayarları (genişlik, margin, padding vb.)
+  styleOverrides     Json? // Stil geçersiz kılmaları
+  isVisible          Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+// Tema modeli
+model StoreTheme {
+  id          BigInt   @id @default(autoincrement())
+  storeId     BigInt
+  store       Store    @relation(fields: [storeId], references: [id])
+  name        String
+  description String?
+  isDefault   Boolean  @default(false)
+  variables   Json // Tema değişkenleri (renkler, yazı tipleri vb.)
+  settings    Json? // Tema ayarları
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([storeId, slug])
+  @@unique([storeId, name])
 }

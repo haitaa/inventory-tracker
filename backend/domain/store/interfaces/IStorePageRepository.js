@@ -1,5 +1,5 @@
 /**
- * Mağaza sayfası repository arayüzü
+ * StorePage repository arayüzü
  */
 export class IStorePageRepository {
   /**
@@ -31,7 +31,7 @@ export class IStorePageRepository {
    * @param {string} storeId
    * @returns {Promise<import('../StorePage.js').StorePage>}
    */
-  async getHomepageByStoreId(storeId) {
+  async getHomePage(storeId) {
     throw new Error("Method not implemented");
   }
 
@@ -56,6 +56,16 @@ export class IStorePageRepository {
    * @returns {Promise<boolean>}
    */
   async delete(id) {
+    throw new Error("Method not implemented");
+  }
+
+  /**
+   * Anasayfa olarak işaretlenen sayfanın diğer sayfaları anasayfa olmaktan çıkarır
+   * @param {string} storeId
+   * @param {string} pageId
+   * @returns {Promise<boolean>}
+   */
+  async setHomePage(storeId, pageId) {
     throw new Error("Method not implemented");
   }
 }

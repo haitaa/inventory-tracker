@@ -11,6 +11,7 @@ import fileImportRouter from "./routes/file-service/fileRoute.js";
 import customerRouter from "./routes/customer-service/customerRoute.js";
 import orderRouter from "./routes/order-service/orderRoute.js";
 import paymentRouter from "./routes/paymentRoutes.js";
+import componentRouter from "./routes/component-service/componentRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import dotenv from "dotenv";
 import storeBuilderApi from "./api/server.js";
@@ -42,6 +43,7 @@ app.use("/user", userRouter);
 app.use("/customers", customerRouter);
 app.use("/orders", orderRouter);
 app.use("/payments", paymentRouter);
+app.use("/components", componentRouter);
 
 // Store Builder API'yi /store-builder yoluna monte et
 app.use("/store-builder", storeBuilderApi);

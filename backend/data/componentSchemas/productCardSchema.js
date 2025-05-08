@@ -1,0 +1,171 @@
+/**
+ * Ürün Kartı bileşeni JSON şeması ve varsayılan değerleri
+ */
+export const productCardSchema = {
+  schema: {
+    type: "object",
+    properties: {
+      layout: {
+        type: "string",
+        enum: ["simple", "detailed", "horizontal", "compact", "featured"],
+        default: "simple",
+        description: "Kart düzeni",
+      },
+      showImage: {
+        type: "boolean",
+        default: true,
+        description: "Ürün resmini göster",
+      },
+      showTitle: {
+        type: "boolean",
+        default: true,
+        description: "Ürün başlığını göster",
+      },
+      showPrice: {
+        type: "boolean",
+        default: true,
+        description: "Ürün fiyatını göster",
+      },
+      showOldPrice: {
+        type: "boolean",
+        default: true,
+        description: "Eski fiyatı göster (indirim varsa)",
+      },
+      showDiscount: {
+        type: "boolean",
+        default: false,
+        description: "İndirim yüzdesini göster",
+      },
+      showRating: {
+        type: "boolean",
+        default: true,
+        description: "Ürün puanını göster",
+      },
+      showDescription: {
+        type: "boolean",
+        default: false,
+        description: "Kısa açıklamayı göster",
+      },
+      showAddToCart: {
+        type: "boolean",
+        default: true,
+        description: "Sepete ekle butonunu göster",
+      },
+      showQuickView: {
+        type: "boolean",
+        default: false,
+        description: "Hızlı görüntüleme butonunu göster",
+      },
+      showWishlist: {
+        type: "boolean",
+        default: true,
+        description: "Favorilere ekle butonunu göster",
+      },
+      showCompare: {
+        type: "boolean",
+        default: false,
+        description: "Karşılaştırma butonunu göster",
+      },
+      showBadges: {
+        type: "boolean",
+        default: true,
+        description: "Rozet'leri göster (yeni, indirimde, tükenmek üzere)",
+      },
+      imageAspectRatio: {
+        type: "string",
+        enum: ["1:1", "4:3", "3:4", "16:9"],
+        default: "1:1",
+        description: "Görsel en/boy oranı",
+      },
+      hoverEffect: {
+        type: "string",
+        enum: ["none", "zoom", "alternate-image", "fade", "slide"],
+        default: "none",
+        description: "Fare üzerine geldiğinde efekt",
+      },
+      cornerRadius: {
+        type: "number",
+        default: 4,
+        description: "Köşe yuvarlaklığı (px)",
+      },
+      borderWidth: {
+        type: "number",
+        default: 1,
+        description: "Kenarlık kalınlığı (px)",
+      },
+      borderColor: {
+        type: "string",
+        format: "color",
+        default: "#e9ecef",
+        description: "Kenarlık rengi",
+      },
+      backgroundColor: {
+        type: "string",
+        format: "color",
+        default: "#ffffff",
+        description: "Arka plan rengi",
+      },
+      titleColor: {
+        type: "string",
+        format: "color",
+        default: "#212529",
+        description: "Başlık rengi",
+      },
+      priceColor: {
+        type: "string",
+        format: "color",
+        default: "#212529",
+        description: "Fiyat rengi",
+      },
+      oldPriceColor: {
+        type: "string",
+        format: "color",
+        default: "#6c757d",
+        description: "Eski fiyat rengi",
+      },
+      boxShadow: {
+        type: "boolean",
+        default: false,
+        description: "Kart gölgesi göster",
+      },
+      titleMaxLines: {
+        type: "number",
+        default: 2,
+        description: "Başlık maksimum satır sayısı",
+      },
+      descriptionMaxLines: {
+        type: "number",
+        default: 3,
+        description: "Açıklama maksimum satır sayısı",
+      },
+    },
+    required: ["layout"],
+  },
+  defaultProps: {
+    layout: "simple",
+    showImage: true,
+    showTitle: true,
+    showPrice: true,
+    showOldPrice: true,
+    showDiscount: false,
+    showRating: true,
+    showDescription: false,
+    showAddToCart: true,
+    showQuickView: false,
+    showWishlist: true,
+    showCompare: false,
+    showBadges: true,
+    imageAspectRatio: "1:1",
+    hoverEffect: "zoom",
+    cornerRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    backgroundColor: "#ffffff",
+    titleColor: "#212529",
+    priceColor: "#212529",
+    oldPriceColor: "#6c757d",
+    boxShadow: true,
+    titleMaxLines: 2,
+    descriptionMaxLines: 3,
+  },
+};
