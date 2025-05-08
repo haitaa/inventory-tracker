@@ -9,6 +9,7 @@ import userRouter from "./routes/user-service/userRoute.js";
 import fileImportRouter from "./routes/file-service/fileRoute.js";
 import customerRouter from "./routes/customer-service/customerRoute.js";
 import orderRouter from "./routes/order-service/orderRoute.js";
+import paymentRouter from "./routes/paymentRoutes.js";
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use("/inventory", inventoryRouter);
 app.use("/user", userRouter);
 app.use("/customers", customerRouter);
 app.use("/orders", orderRouter);
+app.use("/payments", paymentRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT} ${NODE_ENV}`);

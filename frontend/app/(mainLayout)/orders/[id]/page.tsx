@@ -88,6 +88,8 @@ const StatusIcon = ({ status }: { status: OrderStatusEnum }) => {
       return <Clock className="h-5 w-5 text-yellow-500" />;
     case OrderStatusEnum.PROCESSING:
       return <Package className="h-5 w-5 text-blue-500" />;
+    case OrderStatusEnum.PAID:
+      return <CreditCard className="h-5 w-5 text-green-500" />;
     case OrderStatusEnum.SHIPPED:
       return <Truck className="h-5 w-5 text-indigo-500" />;
     case OrderStatusEnum.DELIVERED:

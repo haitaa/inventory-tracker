@@ -719,6 +719,9 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
                             <SelectItem value={OrderStatusEnum.PROCESSING}>
                               İşleniyor
                             </SelectItem>
+                            <SelectItem value={OrderStatusEnum.PAID}>
+                              Ödendi
+                            </SelectItem>
                             <SelectItem value={OrderStatusEnum.SHIPPED}>
                               Kargoya Verildi
                             </SelectItem>

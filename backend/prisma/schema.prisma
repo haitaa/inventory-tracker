@@ -289,6 +289,7 @@ model Customer {
 enum OrderStatusType {
   PENDING // Beklemede
   PROCESSING // İşleniyor
+  PAID // Ödendi
   SHIPPED // Kargoya verildi
   DELIVERED // Teslim edildi
   CANCELLED // İptal edildi
@@ -322,6 +323,7 @@ model Order {
   notes         String? // Notlar
   items         OrderItem[] // Sipariş kalemleri
   logs          OrderLog[] // Sipariş logları
+  payments      Payment[] // Siparişin ödemeleri
 
   // Kargo bilgileri
   shippingAddress String?
@@ -367,4 +369,34 @@ model OrderLog {
   createdAt DateTime         @default(now())
 
   @@index([orderId])
+}
+
+// Ödeme durumu için enum
+enum PaymentStatusType {
+  PENDING // Beklemede
+  COMPLETED // Tamamlandı
+  FAILED // Başarısız
+  CANCELLED // İptal edildi
+  REFUNDED // İade edildi
+}
+
+// Ödeme modeli
+model Payment {
+  id              BigInt            @id @default(autoincrement())
+  orderId         BigInt // Hangi siparişe ait
+  order           Order             @relation(fields: [orderId], references: [id])
+  amount          Float // Ödeme tutarı
+  currency        String            @default("TRY") // Para birimi
+  paymentMethod   String // Ödeme yöntemi (credit_card, bank_transfer, paypal, pos, vs.)
+  transactionId   String // İşlem numarası
+  transactionDate DateTime // İşlem tarihi
+  status          PaymentStatusType @default(PENDING) // Ödeme durumu
+  errorMessage    String? // Hata mesajı
+  metadata        Json? // Ek bilgiler (JSON olarak saklanır)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([transactionId])
 }

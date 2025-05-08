@@ -16,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr">
+    <html lang="en">
       <body>
         <AuthProvider>
           <div className="flex h-screen bg-slate-50">

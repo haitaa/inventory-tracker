@@ -130,6 +130,7 @@ export const getOrderStatusLabel = (status: OrderStatusEnum): string => {
   const statusLabels = {
     [OrderStatusEnum.PENDING]: "Beklemede",
     [OrderStatusEnum.PROCESSING]: "İşleniyor",
+    [OrderStatusEnum.PAID]: "Ödendi",
     [OrderStatusEnum.SHIPPED]: "Kargoya Verildi",
     [OrderStatusEnum.DELIVERED]: "Teslim Edildi",
     [OrderStatusEnum.CANCELLED]: "İptal Edildi",
@@ -148,6 +149,7 @@ export const getOrderStatusColor = (status: OrderStatusEnum): string => {
   const statusColors = {
     [OrderStatusEnum.PENDING]: "bg-yellow-100 text-yellow-800",
     [OrderStatusEnum.PROCESSING]: "bg-blue-100 text-blue-800",
+    [OrderStatusEnum.PAID]: "bg-green-100 text-green-800",
     [OrderStatusEnum.SHIPPED]: "bg-indigo-100 text-indigo-800",
     [OrderStatusEnum.DELIVERED]: "bg-green-100 text-green-800",
     [OrderStatusEnum.CANCELLED]: "bg-red-100 text-red-800",

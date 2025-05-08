@@ -234,6 +234,7 @@ export enum TransactionTypeEnum {
 export enum OrderStatusEnum {
   PENDING = "PENDING",
   PROCESSING = "PROCESSING",
+  PAID = "PAID",
   SHIPPED = "SHIPPED",
   DELIVERED = "DELIVERED",
   CANCELLED = "CANCELLED",
@@ -333,6 +334,60 @@ export interface OrderLogType {
   message: string;
   details?: string;
   createdAt: string;
+}
+
+/**
+ * Ödeme durumu enum
+ */
+export enum PaymentStatusEnum {
+  PENDING = "PENDING",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  CANCELLED = "CANCELLED",
+  REFUNDED = "REFUNDED"
+}
+
+/**
+ * Ödeme bilgisini temsil eden tip
+ */
+export interface PaymentType {
+  id: string;
+  orderId: string;
+  order?: OrderType;
+  amount: number;
+  currency: string;
+  paymentMethod: string;
+  transactionId: string;
+  transactionDate: string;
+  status: PaymentStatusEnum;
+  errorMessage?: string;
+  metadata?: any;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Kredi kartı bilgisi tipi
+ */
+export interface CreditCardInfo {
+  cardNumber: string;
+  cardHolder: string;
+  expiryMonth: string;
+  expiryYear: string;
+  cvv: string;
+}
+
+/**
+ * Ödeme isteği tipi
+ */
+export interface PaymentRequest {
+  orderId: string;
+  amount: number;
+  paymentMethodId: string;
+  currency: string;
+  creditCardInfo?: CreditCardInfo;
+  returnUrl?: string;
+  description?: string;
 }
 
 /**
