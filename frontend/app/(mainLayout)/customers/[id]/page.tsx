@@ -45,6 +45,40 @@ import {
   getPaymentTypeLabel,
 } from "@/app/lib/orderService";
 
+function formatPhoneNumber(value: string): string {
+  if (!value) return "-";
+
+  if (value.includes("(") && value.includes(")")) return value;
+
+  let phoneNum = value;
+  let countryCode = "";
+
+  if (value.startsWith("+")) {
+    const match = value.match(/^\+(\d+)\s*(.*)$/);
+    if (match) {
+      countryCode = `+${match[1]} `;
+      phoneNum = match[2];
+    }
+  }
+
+  const phoneNumber = phoneNum.replace(/[^\d]/g, "");
+
+  const phoneLength = phoneNumber.length;
+
+  let formattedPhone;
+  if (phoneLength < 4) {
+    formattedPhone = phoneNumber;
+  } else if (phoneLength < 7) {
+    formattedPhone = `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+  } else if (phoneLength < 10) {
+    formattedPhone = `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6)}`;
+  } else {
+    formattedPhone = `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+  }
+
+  return countryCode + formattedPhone;
+}
+
 export default function CustomerDetailPage({
   params,
 }: {
@@ -178,7 +212,9 @@ export default function CustomerDetailPage({
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">Telefon:</span>
-                <span>{customer.phone || "-"}</span>
+                <span className="font-mono">
+                  {customer.phone ? formatPhoneNumber(customer.phone) : "-"}
+                </span>
               </div>
             </div>
 

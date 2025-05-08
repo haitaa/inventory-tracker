@@ -40,6 +40,7 @@ export interface OrderInput {
   items: OrderItemInput[];
   paymentType?: PaymentTypeEnum;
   paymentStatus?: boolean;
+  status?: OrderStatusEnum;
   shippingFee?: number;
   tax?: number;
   discount?: number;
@@ -396,5 +397,19 @@ export const bulkUpdateOrderStatus = async (
     ids, 
     status 
   });
+  return response.data;
+};
+
+/**
+ * Siparişi günceller.
+ * @param {string} id - Siparişin ID'si
+ * @param {Partial<OrderInput>} orderData - Güncellenecek sipariş verileri
+ * @returns {Promise<OrderType>} Güncellenmiş sipariş
+ */
+export const updateOrder = async (
+  id: string,
+  orderData: Partial<OrderInput>
+): Promise<OrderType> => {
+  const response = await api.put<OrderType>(`/orders/${id}`, orderData);
   return response.data;
 }; 

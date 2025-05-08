@@ -8,6 +8,7 @@ import {
   updateShippingInfo,
   cancelOrder,
   bulkUpdateOrderStatus,
+  updateOrder,
 } from "../../controllers/order-service/orderController.js";
 import { requireAuth } from "../../middleware/authMiddleware.js";
 
@@ -32,6 +33,9 @@ orderRouter.get("/", getOrders);
 
 // ID'ye göre sipariş getirme - GET /api/orders/:id
 orderRouter.get("/:id", getOrderById);
+
+// Sipariş güncelleme - PUT /api/orders/:id
+orderRouter.put("/:id", updateOrder);
 
 /**
  * Sipariş durumu işlemleri

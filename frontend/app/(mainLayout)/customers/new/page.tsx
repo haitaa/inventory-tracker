@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Phone as PhoneIcon, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,10 +48,48 @@ const customerSchema = z.object({
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
 
+// Telefon numarası formatlama fonksiyonu
+function formatPhoneNumber(value: string): string {
+  if (!value) return value;
+
+  // Sadece sayıları al
+  const phoneNumber = value.replace(/[^\d]/g, "");
+
+  // Telefon uzunluğunu kontrol et
+  const phoneLength = phoneNumber.length;
+
+  // Formatlama
+  if (phoneLength < 4) {
+    return phoneNumber;
+  } else if (phoneLength < 7) {
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+  } else if (phoneLength < 10) {
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6)}`;
+  } else {
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+  }
+}
+
+// Popüler ülke kodları listesi
+const countryCodes = [
+  { code: "+90", country: "TR" },
+  { code: "+1", country: "US" },
+  { code: "+44", country: "GB" },
+  { code: "+49", country: "DE" },
+  { code: "+33", country: "FR" },
+  { code: "+39", country: "IT" },
+  { code: "+7", country: "RU" },
+  { code: "+86", country: "CN" },
+  { code: "+91", country: "IN" },
+  { code: "+81", country: "JP" },
+];
+
 export default function NewCustomerPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [countryCode, setCountryCode] = useState("+90");
+  const [showCountryList, setShowCountryList] = useState(false);
 
   // Form oluştur
   const form = useForm<CustomerFormValues>({
@@ -85,6 +123,41 @@ export default function NewCustomerPage() {
       setLoading(false);
     }
   };
+
+  // Ülke kodu seçici bileşeni
+  const CountryCodeSelector = () => (
+    <div className="relative">
+      <button
+        type="button"
+        className="bg-muted flex items-center px-3 border border-r-0 rounded-l-md border-input text-muted-foreground h-10"
+        onClick={() => setShowCountryList(!showCountryList)}
+      >
+        <span>{countryCode}</span>
+        <ChevronDown className="ml-1 h-4 w-4" />
+      </button>
+
+      {showCountryList && (
+        <div className="absolute top-full left-0 mt-1 z-10 bg-background border border-input rounded-md shadow-md py-1 w-40 max-h-60 overflow-y-auto">
+          {countryCodes.map((item) => (
+            <button
+              key={item.code}
+              type="button"
+              className="w-full text-left px-3 py-2 hover:bg-muted flex items-center justify-between"
+              onClick={() => {
+                setCountryCode(item.code);
+                setShowCountryList(false);
+              }}
+            >
+              <span>{item.code}</span>
+              <span className="text-xs text-muted-foreground">
+                {item.country}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -165,8 +238,25 @@ export default function NewCustomerPage() {
                     <FormItem>
                       <FormLabel>Telefon</FormLabel>
                       <FormControl>
-                        <Input placeholder="(555) 123-4567" {...field} />
+                        <div className="flex relative">
+                          <CountryCodeSelector />
+                          <Input
+                            className="rounded-l-none pl-3"
+                            placeholder="(555) 123-4567"
+                            {...field}
+                            value={formatPhoneNumber(field.value || "")}
+                            onChange={(e) => {
+                              const formattedValue = formatPhoneNumber(
+                                e.target.value
+                              );
+                              field.onChange(formattedValue);
+                            }}
+                          />
+                        </div>
                       </FormControl>
+                      <FormDescription>
+                        Ülke kodu ile birlikte telefon numarası
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

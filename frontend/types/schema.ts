@@ -295,6 +295,7 @@ export interface OrderType {
   trackingNumber?: string;
   carrierName?: string;
   items: OrderItemType[];
+  logs?: OrderLogType[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -317,6 +318,21 @@ export interface OrderItemType {
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/**
+ * Sipariş log kayıtlarını temsil eden tip
+ */
+export interface OrderLogType {
+  id: string;
+  orderId: string;
+  order?: OrderType;
+  userId: string;
+  user?: UserType;
+  status?: OrderStatusEnum;
+  message: string;
+  details?: string;
+  createdAt: string;
 }
 
 /**

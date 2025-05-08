@@ -256,6 +256,7 @@ model User {
   stock                 Stock[]
   orders                Order[] // Kullanıcının siparişleri
   customers             Customer[] // Kullanıcının müşterileri
+  orderLogs             OrderLog[] // Kullanıcının sipariş logları
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -320,6 +321,7 @@ model Order {
   totalAmount   Float // Toplam tutar
   notes         String? // Notlar
   items         OrderItem[] // Sipariş kalemleri
+  logs          OrderLog[] // Sipariş logları
 
   // Kargo bilgileri
   shippingAddress String?
@@ -350,4 +352,19 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
+}
+
+// Sipariş log modeli - sipariş durumu değişikliklerini ve önemli işlemleri kaydeder
+model OrderLog {
+  id        BigInt           @id @default(autoincrement())
+  orderId   BigInt // Hangi siparişe ait
+  order     Order            @relation(fields: [orderId], references: [id])
+  userId    BigInt // İşlemi yapan kullanıcı
+  user      User             @relation(fields: [userId], references: [id])
+  status    OrderStatusType? // Yeni durum (eğer durum değiştiyse)
+  message   String // Log mesajı
+  details   String? // Ek detaylar (JSON olarak saklanabilir)
+  createdAt DateTime         @default(now())
+
+  @@index([orderId])
 }
