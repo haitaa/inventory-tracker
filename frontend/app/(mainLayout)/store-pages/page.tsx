@@ -290,7 +290,7 @@ export default function StorePages() {
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto px-6 sm:px-8 py-10 max-w-[1400px]">
       {/* Üst Başlık Alanı */}
       <div className="mb-10">
         <div className="flex justify-between items-center">
@@ -343,7 +343,7 @@ export default function StorePages() {
       )}
 
       {/* Filtreleme Alanı */}
-      <div className="bg-white rounded-xl shadow-sm border p-4 mb-8">
+      <div className="bg-white rounded-2xl shadow-sm border p-6 mb-8">
         <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
           <div className="w-full md:w-96 relative">
             <LuSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -375,7 +375,7 @@ export default function StorePages() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredPages.length === 0 ? (
           <div className="col-span-full flex flex-col items-center justify-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-300">
             <div className="bg-white p-4 rounded-full shadow-sm border mb-4">
@@ -408,7 +408,7 @@ export default function StorePages() {
               whileHover={{ y: -5, transition: { duration: 0.2 } }}
               className="h-full"
             >
-              <Card className="overflow-hidden h-full border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200">
+              <Card className="overflow-hidden h-full border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 rounded-xl">
                 <CardHeader className="pb-2 relative">
                   <div className="flex justify-between items-start">
                     <div>

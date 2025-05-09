@@ -37,6 +37,109 @@ const heroStyle = `.hero-section {
   cursor: pointer;
 }`;
 
+// Navbar bileşeni için HTML şablonu (basitleştirilmiş)
+const navbarTemplate = `<div class="navbar-container">
+  <div class="navbar-logo" style="width: {{{logoWidth}}}px;">
+    <a href="{{{logoUrl}}}">
+      {{#showLogo}}
+      <img src="{{{logoImage}}}" alt="{{{altText}}}" style="max-height: {{{logoHeight}}}px;" />
+      {{/showLogo}}
+      {{#showLogoText}}
+      <span class="logo-text">{{{logoText}}}</span>
+      {{/showLogoText}}
+    </a>
+  </div>
+  <div class="navbar-links">
+    <a href="{{{link1Url}}}" class="navbar-link">{{{link1Text}}}</a>
+    <a href="{{{link2Url}}}" class="navbar-link">{{{link2Text}}}</a>
+    <a href="{{{link3Url}}}" class="navbar-link">{{{link3Text}}}</a>
+    <a href="{{{link4Url}}}" class="navbar-link">{{{link4Text}}}</a>
+  </div>
+  <div class="navbar-search">
+    <button aria-label="Ara">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+    </button>
+  </div>
+</div>`;
+
+// Navbar bileşeni için CSS stili (basitleştirilmiş)
+const navbarStyle = `.navbar-container {
+  display: flex;
+  width: 100%;
+  height: 70px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+}
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+}
+
+.navbar-logo a {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.navbar-logo img {
+  display: block;
+  object-fit: contain;
+}
+
+.logo-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.navbar-link {
+  color: #333;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.navbar-link:hover {
+  color: #3b82f6;
+}
+
+.navbar-search button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .navbar-container {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 1rem 1.5rem;
+  }
+  
+  .navbar-logo {
+    margin-bottom: 0.5rem;
+  }
+  
+  .navbar-links {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+  }
+}`;
+
 // Özellikler bileşeni için HTML şablonu
 const featuresTemplate = `<div class="features-section">
   <h2 class="features-title">{{{sectionTitle}}}</h2>
@@ -382,6 +485,139 @@ address {
 // Bileşen şablonlarını güncellemek için ana fonksiyon
 async function updateComponentTemplates() {
   try {
+    // Navbar bileşenini kontrol et
+    const createNavbar = await prisma.component.findFirst({
+      where: {
+        name: {
+          contains: "Navbar",
+        },
+      },
+    });
+
+    // Navbar bileşeni yoksa oluştur
+    if (!createNavbar) {
+      console.log("Navbar bileşeni oluşturuluyor...");
+      const navbarComponent = await prisma.component.create({
+        data: {
+          name: "Navbar",
+          description: "Dinamik olarak özelleştirilebilir navigasyon menüsü",
+          tags: ["navbar", "menu", "navigasyon"],
+          category: "layout",
+        },
+      });
+
+      // Navbar bileşeni için versiyon oluştur
+      const navbarSchema = {
+        properties: {
+          logoImage: {
+            type: "string",
+            title: "Logo Görseli",
+            default: "https://via.placeholder.com/150x50",
+          },
+          logoUrl: {
+            type: "string",
+            title: "Logo Bağlantısı",
+            default: "/",
+          },
+          altText: {
+            type: "string",
+            title: "Logo Alt Metni",
+            default: "Site Logosu",
+          },
+          logoWidth: {
+            type: "number",
+            title: "Logo Genişliği (px)",
+            default: 150,
+          },
+          logoHeight: {
+            type: "number",
+            title: "Logo Yüksekliği (px)",
+            default: 40,
+          },
+          showLogo: {
+            type: "boolean",
+            title: "Logo Görseli Göster",
+            default: true,
+          },
+          showLogoText: {
+            type: "boolean",
+            title: "Logo Metni Göster",
+            default: false,
+          },
+          logoText: {
+            type: "string",
+            title: "Logo Metni",
+            default: "Site Adı",
+          },
+          link1Url: {
+            type: "string",
+            title: "Link 1 URL",
+            default: "/",
+          },
+          link1Text: {
+            type: "string",
+            title: "Link 1 Metni",
+            default: "Ana Sayfa",
+          },
+          link2Url: {
+            type: "string",
+            title: "Link 2 URL",
+            default: "/abonelik",
+          },
+          link2Text: {
+            type: "string",
+            title: "Link 2 Metni",
+            default: "Abonelik",
+          },
+          link3Url: {
+            type: "string",
+            title: "Link 3 URL",
+            default: "/urunler",
+          },
+          link3Text: {
+            type: "string",
+            title: "Link 3 Metni",
+            default: "Ürünler",
+          },
+          link4Url: {
+            type: "string",
+            title: "Link 4 URL",
+            default: "/iletisim",
+          },
+          link4Text: {
+            type: "string",
+            title: "Link 4 Metni",
+            default: "İletişim",
+          },
+        },
+      };
+
+      const navbarCode = `
+<!-- HTML Template -->
+${navbarTemplate}
+
+<!-- CSS Styles -->
+<style>
+${navbarStyle}
+</style>
+      `;
+
+      await prisma.componentVersion.create({
+        data: {
+          componentId: navbarComponent.id,
+          version: "1.0.0",
+          code: navbarCode,
+          schema: navbarSchema,
+          preview: `data:image/svg+xml;base64,${Buffer.from(
+            '<svg width="200" height="50" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#ffffff"/><text x="50%" y="50%" font-family="Arial" font-size="14" fill="#333" text-anchor="middle">Navbar</text></svg>'
+          ).toString("base64")}`,
+          isActive: true,
+        },
+      });
+
+      console.log(`Navbar bileşeni başarıyla oluşturuldu.`);
+    }
+
     // Yeni bileşenler oluşturacak mıyız kontrol et
     const createSidebar = await prisma.component.findFirst({
       where: {
@@ -785,6 +1021,10 @@ ${footerStyle}
             },
           },
         };
+      } else if (component.name.toLowerCase() === "navbar") {
+        // Navbar bileşeni zaten yukarıda oluşturuldu, güncelleme yapmayalım
+        console.log("Navbar bileşeni zaten güncel.");
+        continue;
       } else if (component.name.toLowerCase().includes("sidebar")) {
         // Sidebar bileşeni güncellenmesin, zaten yukarıda oluşturuldu
         console.log("Sidebar bileşeni zaten güncel.");

@@ -3,6 +3,7 @@ import { footerSchema } from "./footerSchema.js";
 import { heroSchema } from "./heroSchema.js";
 import { textSectionSchema } from "./textSectionSchema.js";
 import { productCardSchema } from "./productCardSchema.js";
+import { navbarSchema } from "./navbarSchema.js";
 
 /**
  * Kullanılabilir tüm bileşenler ve şemaları
@@ -13,6 +14,7 @@ export const componentSchemas = {
   hero: heroSchema,
   textSection: textSectionSchema,
   productCard: productCardSchema,
+  navbar: navbarSchema,
 };
 
 /**
@@ -25,7 +27,7 @@ export const componentCategories = [
     description: "Sayfaların temel düzenini oluşturan bileşenler",
     icon: "layout",
     slug: "layout",
-    components: ["header", "footer"],
+    components: ["header", "footer", "navbar"],
   },
   {
     id: "hero",
