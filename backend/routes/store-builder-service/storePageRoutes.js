@@ -71,20 +71,50 @@ router.get("/:id/sections", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const prisma = req.app.locals.prisma;
-    const { title, slug, metaTitle, metaDescription, isHomePage } = req.body;
+    const { title, slug, metaTitle, metaDescription, isHomePage, storeId } =
+      req.body;
 
-    // Slug kontrolü
+    // StoreId kontrolü
+    if (!storeId) {
+      return res.status(400).json({ error: "Mağaza ID zorunludur" });
+    }
+
+    // Store varlığı kontrolü
+    const store = await prisma.store.findUnique({
+      where: { id: storeId },
+    });
+
+    if (!store) {
+      return res.status(404).json({ error: "Belirtilen mağaza bulunamadı" });
+    }
+
+    // Store'un userId kontrolü
+    if (store.userId === null || store.userId === undefined) {
+      return res.status(400).json({
+        error:
+          "Bu mağaza güncel değil. Lütfen önce mağazayı güncelleyin veya yeni bir mağaza oluşturun.",
+        details:
+          "Mağaza, kullanıcı ilişkisine sahip değil. Veritabanı şema değişiklikleri nedeniyle eski mağazalar geçersiz olabilir.",
+      });
+    }
+
+    // Slug kontrolü (aynı mağaza içinde benzersiz olmalı)
     const existingPage = await prisma.storePage.findFirst({
-      where: { slug },
+      where: {
+        slug,
+        storeId,
+      },
     });
 
     if (existingPage) {
-      return res.status(400).json({ error: "Bu URL slug zaten kullanılıyor" });
+      return res
+        .status(400)
+        .json({ error: "Bu URL slug zaten bu mağazada kullanılıyor" });
     }
 
     const page = await prisma.storePage.create({
       data: {
-        storeId: "1", // Gerçek uygulamada doğru mağaza ID'si gelecek
+        storeId,
         title,
         slug,
         metaTitle: metaTitle || title,
@@ -97,7 +127,10 @@ router.post("/", async (req, res) => {
     res.status(201).json(page);
   } catch (error) {
     console.error("Sayfa oluşturulurken hata:", error);
-    res.status(500).json({ error: "Sayfa oluşturulurken bir hata oluştu" });
+    res.status(500).json({
+      error: "Sayfa oluşturulurken bir hata oluştu",
+      details: error.message,
+    });
   }
 });
 

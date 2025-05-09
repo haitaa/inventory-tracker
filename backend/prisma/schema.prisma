@@ -224,6 +224,8 @@ model User {
   orderLogs             OrderLog[]
   products              Product[]
   stock                 Stock[]
+  components            Component[]
+  stores                Store[]
 }
 
 model Customer {
@@ -418,6 +420,8 @@ model Store {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   pages       StorePage[]
+  userId      BigInt
+  user        User        @relation(fields: [userId], references: [id])
 }
 
 model StorePage {
@@ -446,6 +450,8 @@ model Component {
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   versions    ComponentVersion[]
+  userId      BigInt?
+  user        User?              @relation(fields: [userId], references: [id])
 }
 
 model ComponentVersion {

@@ -5,6 +5,7 @@ import {
   createComponent,
   updateComponent,
   deleteComponent,
+  copyTemplateComponent,
 } from "../../controllers/component-service/componentController.js";
 
 import {
@@ -49,6 +50,7 @@ router.get("/:id", getComponentById);
 router.post("/", createComponent);
 router.put("/:id", updateComponent);
 router.delete("/:id", deleteComponent);
+router.post("/copy", copyTemplateComponent);
 
 // Bileşen versiyon rotaları
 router.get("/:componentId/versions", getComponentVersions);

@@ -20,6 +20,35 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Varsayılan mağazayı getir
+router.get("/default", async (req, res) => {
+  try {
+    // Kullanıcının son aktif mağazasını veya varsayılan olarak işaretlenmiş bir mağazayı getir
+    const store = await prisma.store.findFirst({
+      where: {
+        active: true,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!store) {
+      return res.status(404).json({ error: "Varsayılan mağaza bulunamadı" });
+    }
+
+    res.status(200).json(store);
+  } catch (error) {
+    console.error("Varsayılan mağaza getirilirken hata:", error);
+    res
+      .status(500)
+      .json({ error: "Varsayılan mağaza yüklenirken bir hata oluştu" });
+  }
+});
+
 // Belirli bir mağazayı getir
 router.get("/:id", async (req, res) => {
   try {
@@ -49,13 +78,22 @@ router.post("/", async (req, res) => {
   try {
     const { name, description, logo, subdomain, templateId, userId } = req.body;
 
-    // Subdomain kontrolü
-    const existingStore = await prisma.store.findUnique({
-      where: { subdomain },
-    });
+    // Kullanıcı ID kontrolü
+    if (!userId) {
+      return res.status(400).json({ error: "Kullanıcı ID zorunludur" });
+    }
 
-    if (existingStore) {
-      return res.status(400).json({ error: "Bu subdomain zaten kullanılıyor" });
+    // Subdomain kontrolü
+    if (subdomain) {
+      const existingStore = await prisma.store.findFirst({
+        where: { subdomain },
+      });
+
+      if (existingStore) {
+        return res
+          .status(400)
+          .json({ error: "Bu subdomain zaten kullanılıyor" });
+      }
     }
 
     const store = await prisma.store.create({
@@ -65,7 +103,7 @@ router.post("/", async (req, res) => {
         logo,
         subdomain,
         templateId,
-        userId: userId || "1", // Varsayılan kullanıcı
+        userId: BigInt(userId), // BigInt'e çevirme
         isActive: true,
         isPublished: false,
       },

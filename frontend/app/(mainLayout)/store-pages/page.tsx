@@ -71,6 +71,7 @@ export default function StorePages() {
   const [activeTab, setActiveTab] = useState<"all" | "published" | "drafts">(
     "all"
   );
+  const [storeId, setStoreId] = useState<string>("");
 
   const [newPage, setNewPage] = useState({
     title: "",
@@ -81,6 +82,32 @@ export default function StorePages() {
   });
 
   useEffect(() => {
+    // Mağaza ID'sini al
+    const fetchStoreId = async () => {
+      try {
+        const response = await axios.get("/api/current-store");
+        if (response.data && response.data.id) {
+          setStoreId(response.data.id);
+        } else {
+          console.error("Mağaza ID'si bulunamadı:", response.data);
+          // Mağaza bilgisi alınamadığında kullanıcıya mesaj göster
+          setMessage({
+            type: "error",
+            text: "Mağaza bilgisi alınamadı. Manuel olarak mağaza bilgisi ekleyin.",
+          });
+        }
+      } catch (error) {
+        console.error("Mağaza bilgisi alınırken hata:", error);
+        // API hatası durumunda son çare - hata mesajı göster
+        setMessage({
+          type: "error",
+          text: "Mağaza bilgisi alınamadı. Lütfen önce bir mağaza oluşturun.",
+        });
+      }
+    };
+
+    fetchStoreId();
+
     const fetchPages = async () => {
       try {
         setIsLoading(true);
@@ -129,9 +156,18 @@ export default function StorePages() {
 
   const handleCreatePage = async () => {
     try {
+      if (!storeId) {
+        setMessage({
+          type: "error",
+          text: "Mağaza bilgisi bulunamadı. Lütfen önce bir mağaza seçin veya oluşturun.",
+        });
+        return;
+      }
+
       const response = await axios.post("/api/store-pages", {
         ...newPage,
         isPublished: false,
+        storeId: storeId,
       });
 
       // Yeni oluşturulan sayfayı bölüm sayısı ile birlikte ekle

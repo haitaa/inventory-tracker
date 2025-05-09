@@ -18,7 +18,20 @@ const componentCategoryRepository = new PrismaComponentCategoryRepository(
 export const getAllComponents = async (req, res) => {
   try {
     const prisma = req.app.locals.prisma;
+    const userId = req.query.userId; // URL'den kullanıcı kimliğini al
+
+    // Sorgu koşullarını oluştur
+    let whereCondition = {};
+
+    if (userId) {
+      // Belirli bir kullanıcının bileşenlerini ve global şablonları getir (userId=null)
+      whereCondition = {
+        OR: [{ userId: BigInt(userId) }, { userId: null }],
+      };
+    }
+
     const components = await prisma.component.findMany({
+      where: whereCondition,
       include: {
         versions: true,
       },
@@ -67,7 +80,13 @@ export const getComponentById = async (req, res) => {
 export const createComponent = async (req, res) => {
   try {
     const prisma = req.app.locals.prisma;
-    const { name, description, tags, category } = req.body;
+    const { name, description, tags, category, userId } = req.body;
+
+    // userId varsa BigInt'e çevir
+    let userIdValue = null;
+    if (userId) {
+      userIdValue = BigInt(userId);
+    }
 
     const component = await prisma.component.create({
       data: {
@@ -75,6 +94,7 @@ export const createComponent = async (req, res) => {
         description,
         tags: tags || [],
         category,
+        userId: userIdValue, // Kullanıcı kimliği ekle
       },
     });
 
@@ -162,5 +182,72 @@ export const deleteComponent = async (req, res) => {
   } catch (error) {
     console.error("Bileşen silme hatası:", error);
     res.status(500).json({ error: "Bileşen silinirken bir hata oluştu" });
+  }
+};
+
+/**
+ * Şablon bileşeni kullanıcı için kopyalar
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const copyTemplateComponent = async (req, res) => {
+  try {
+    const prisma = req.app.locals.prisma;
+    const { componentId, userId } = req.body;
+
+    if (!componentId || !userId) {
+      return res
+        .status(400)
+        .json({ error: "Bileşen ID ve kullanıcı ID gereklidir" });
+    }
+
+    // Kopyalanacak şablon bileşeni bul
+    const templateComponent = await prisma.component.findUnique({
+      where: { id: componentId },
+      include: {
+        versions: {
+          where: { isActive: true },
+        },
+      },
+    });
+
+    if (!templateComponent) {
+      return res.status(404).json({ error: "Bileşen bulunamadı" });
+    }
+
+    // Kullanıcı için yeni bir bileşen kopyası oluştur
+    const userComponent = await prisma.component.create({
+      data: {
+        name: `${templateComponent.name} (Kopyam)`,
+        description: templateComponent.description,
+        tags: templateComponent.tags,
+        category: templateComponent.category,
+        userId: BigInt(userId),
+      },
+    });
+
+    // Aktif versiyonu da kopyala
+    if (templateComponent.versions.length > 0) {
+      const activeVersion = templateComponent.versions[0]; // Aktif olan versiyonu al
+
+      await prisma.componentVersion.create({
+        data: {
+          componentId: userComponent.id,
+          version: "1.0.0",
+          code: activeVersion.code,
+          schema: activeVersion.schema,
+          preview: activeVersion.preview,
+          isActive: true,
+        },
+      });
+    }
+
+    res.status(201).json({
+      message: "Bileşen başarıyla kopyalandı",
+      component: userComponent,
+    });
+  } catch (error) {
+    console.error("Bileşen kopyalama hatası:", error);
+    res.status(500).json({ error: "Bileşen kopyalanırken bir hata oluştu" });
   }
 };

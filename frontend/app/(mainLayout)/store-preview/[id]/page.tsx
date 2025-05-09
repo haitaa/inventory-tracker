@@ -509,16 +509,35 @@ export default function StorePreview() {
         // Her bölüm için bileşenin HTML şablonunu al
         let template = section.componentVersion?.template || "";
 
-        // Bileşen özelliklerini HTML'e işle
+        // Handlebars koşullu ifadeleri işle ({{#condition}} içerik {{/condition}})
         if (section.props) {
+          // Önce koşullu ifadeleri işle
+          const conditionalRegex = /{{#([a-zA-Z0-9_]+)}}([\s\S]*?){{\/\1}}/g;
+          template = template.replace(
+            conditionalRegex,
+            (match, condition, content) => {
+              // Koşul değerini props'tan al
+              const conditionValue = section.props[condition];
+              // Koşul doğruysa içeriği göster, değilse boş string döndür
+              return conditionValue ? content : "";
+            }
+          );
+
+          // Sonra normal değişkenleri işle
           Object.entries(section.props).forEach(([key, value]) => {
             const regex = new RegExp(`{{{${key}}}}`, "g");
-            template = template.replace(regex, String(value));
+            template = template.replace(
+              regex,
+              value !== undefined ? String(value) : ""
+            );
           });
         }
 
         // Kalan yer tutucuları temizle
         template = template.replace(/{{{[^}]+}}}/g, "");
+
+        // Kalan Handlebars ifadelerini temizle
+        template = template.replace(/{{[^}]+}}/g, "");
 
         return `<div id="section-${section.id}" class="section">${template}</div>`;
       })
