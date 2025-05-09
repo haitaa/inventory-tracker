@@ -1,11 +1,11 @@
 import express from "express";
-import { requireAuth } from "../middleware/authMiddleware.js";
+import { requireAuth } from "../../middleware/authMiddleware.js";
 import {
   getPaymentMethods,
   processPayment,
   checkPaymentStatus,
   cancelPayment,
-} from "../controllers/paymentController.js";
+} from "../../controllers/paymentController.js";
 
 const router = express.Router();
 

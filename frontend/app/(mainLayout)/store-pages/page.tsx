@@ -26,6 +26,21 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  LuSearch,
+  LuPlus,
+  LuPencil,
+  LuTrash2,
+  LuHouse,
+  LuEye,
+  LuEyeOff,
+  LuCheck,
+  LuFileText,
+  LuExternalLink,
+  LuCalendar,
+} from "react-icons/lu";
+import { motion } from "framer-motion";
 
 interface StorePage {
   id: string;
@@ -53,6 +68,9 @@ export default function StorePages() {
   const [isNewPageDialogOpen, setIsNewPageDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [pageToDelete, setPageToDelete] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "published" | "drafts">(
+    "all"
+  );
 
   const [newPage, setNewPage] = useState({
     title: "",
@@ -67,7 +85,29 @@ export default function StorePages() {
       try {
         setIsLoading(true);
         const response = await axios.get("/api/store-pages");
-        setPages(response.data);
+
+        // Sayfaları alıp ardından her biri için bölüm sayısını al
+        const pagesData = response.data;
+
+        // Her sayfa için bölüm sayısını al
+        const pagesWithSectionCounts = await Promise.all(
+          pagesData.map(async (page: StorePage) => {
+            try {
+              const sectionsResponse = await axios.get(
+                `/api/store-pages/${page.id}/sections`
+              );
+              return {
+                ...page,
+                sectionsCount: sectionsResponse.data.length,
+              };
+            } catch (error) {
+              console.error(`${page.id} için bölüm sayısı alınamadı:`, error);
+              return page; // Hata durumunda orijinal sayfayı döndür
+            }
+          })
+        );
+
+        setPages(pagesWithSectionCounts);
       } catch (error) {
         console.error("Sayfalar yüklenirken hata oluştu:", error);
         setMessage({
@@ -94,7 +134,13 @@ export default function StorePages() {
         isPublished: false,
       });
 
-      setPages((prev) => [...prev, response.data]);
+      // Yeni oluşturulan sayfayı bölüm sayısı ile birlikte ekle
+      const newPageWithSections = {
+        ...response.data,
+        sectionsCount: 0, // Yeni sayfada henüz bölüm yoktur
+      };
+
+      setPages((prev) => [...prev, newPageWithSections]);
       setIsNewPageDialogOpen(false);
       setNewPage({
         title: "",
@@ -173,15 +219,24 @@ export default function StorePages() {
     }
   };
 
-  const filteredPages = pages.filter(
-    (page) =>
+  const filteredPages = pages.filter((page) => {
+    // Önce metin filtreleme
+    const textMatch =
       page.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      page.slug.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      page.slug.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // Sonra sekme filtreleme
+    if (activeTab === "published") return textMatch && page.isPublished;
+    if (activeTab === "drafts") return textMatch && !page.isPublished;
+    return textMatch; // "all" sekmesi
+  });
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">Yükleniyor...</div>
+      <div className="flex flex-col items-center justify-center h-96">
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-muted-foreground">Sayfalar yükleniyor...</p>
+      </div>
     );
   }
 
@@ -215,190 +270,366 @@ export default function StorePages() {
     }));
   };
 
+  const getStatusColor = (page: StorePage) => {
+    if (page.isHomePage)
+      return "bg-purple-100 text-purple-800 border-purple-300";
+    if (page.isPublished) return "bg-green-100 text-green-800 border-green-300";
+    return "bg-amber-100 text-amber-800 border-amber-300";
+  };
+
+  const getStatusText = (page: StorePage) => {
+    if (page.isHomePage) return "Ana Sayfa";
+    if (page.isPublished) return "Yayında";
+    return "Taslak";
+  };
+
+  const getStatusIcon = (page: StorePage) => {
+    if (page.isHomePage) return <LuHouse className="w-3.5 h-3.5 mr-1" />;
+    if (page.isPublished) return <LuEye className="w-3.5 h-3.5 mr-1" />;
+    return <LuEyeOff className="w-3.5 h-3.5 mr-1" />;
+  };
+
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Mağaza Sayfaları</h1>
-        <Button onClick={() => setIsNewPageDialogOpen(true)}>
-          Yeni Sayfa Oluştur
-        </Button>
+    <div className="container mx-auto py-8">
+      {/* Üst Başlık Alanı */}
+      <div className="mb-10">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Mağaza Sayfaları
+            </h1>
+            <p className="text-gray-500 mt-2 max-w-2xl">
+              Mağazanız için oluşturulan tüm sayfaları buradan yönetebilir,
+              düzenleyebilir veya yenilerini ekleyebilirsiniz.
+            </p>
+          </div>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              onClick={() => setIsNewPageDialogOpen(true)}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md"
+            >
+              <LuPlus className="mr-2 h-4 w-4" />
+              Yeni Sayfa Oluştur
+            </Button>
+          </motion.div>
+        </div>
+
+        <div className="h-1 w-full bg-gradient-to-r from-blue-600 to-indigo-600 mt-4 rounded-full opacity-50"></div>
       </div>
 
       {message && (
-        <Alert
-          className={`mb-6 ${message.type === "success" ? "bg-green-100 border-green-600" : "bg-red-100 border-red-600"}`}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
         >
-          <AlertDescription>{message.text}</AlertDescription>
-        </Alert>
+          <Alert
+            className={`mb-6 border-l-4 ${
+              message.type === "success"
+                ? "bg-green-50 border-green-500 text-green-800"
+                : "bg-red-50 border-red-500 text-red-800"
+            }`}
+          >
+            <div className="flex items-center">
+              {message.type === "success" ? (
+                <LuCheck className="h-5 w-5 mr-2" />
+              ) : (
+                <LuTrash2 className="h-5 w-5 mr-2" />
+              )}
+              <AlertDescription>{message.text}</AlertDescription>
+            </div>
+          </Alert>
+        </motion.div>
       )}
 
-      <div className="mb-6">
-        <Input
-          placeholder="Sayfa ara..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-md"
-        />
+      {/* Filtreleme Alanı */}
+      <div className="bg-white rounded-xl shadow-sm border p-4 mb-8">
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
+          <div className="w-full md:w-96 relative">
+            <LuSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Input
+              placeholder="Sayfa adı veya URL'e göre ara..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-gray-50 border-gray-200"
+            />
+          </div>
+
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) =>
+              setActiveTab(value as "all" | "published" | "drafts")
+            }
+            className="w-full md:w-auto"
+          >
+            <TabsList className="grid w-full md:w-auto grid-cols-3">
+              <TabsTrigger value="all">Tümü ({pages.length})</TabsTrigger>
+              <TabsTrigger value="published">
+                Yayında ({pages.filter((p) => p.isPublished).length})
+              </TabsTrigger>
+              <TabsTrigger value="drafts">
+                Taslaklar ({pages.filter((p) => !p.isPublished).length})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredPages.length === 0 ? (
-          <div className="col-span-full text-center py-12 bg-muted rounded-md">
-            <p className="text-muted-foreground">Henüz sayfa bulunmuyor.</p>
+          <div className="col-span-full flex flex-col items-center justify-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+            <div className="bg-white p-4 rounded-full shadow-sm border mb-4">
+              <LuFileText className="h-10 w-10 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">
+              Sayfa Bulunamadı
+            </h3>
+            <p className="text-gray-500 text-center max-w-md mb-6">
+              {searchQuery
+                ? `"${searchQuery}" için arama sonucu bulunamadı.`
+                : "Henüz eklenen bir sayfa bulunmuyor. Yeni bir sayfa ekleyerek başlayabilirsiniz."}
+            </p>
             <Button
               variant="outline"
-              className="mt-4"
               onClick={() => setIsNewPageDialogOpen(true)}
+              className="gap-2"
             >
-              İlk Sayfayı Oluştur
+              <LuPlus className="h-4 w-4" />
+              Yeni Sayfa Oluştur
             </Button>
           </div>
         ) : (
           filteredPages.map((page) => (
-            <Card key={page.id}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="flex items-center">
-                      {page.title}
-                      {page.isHomePage && (
-                        <Badge className="ml-2 bg-primary">Ana Sayfa</Badge>
-                      )}
-                    </CardTitle>
-                    <CardDescription>/{page.slug}</CardDescription>
+            <motion.div
+              key={page.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+              className="h-full"
+            >
+              <Card className="overflow-hidden h-full border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200">
+                <CardHeader className="pb-2 relative">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-xl group flex items-center gap-2">
+                        {page.title}
+                        {page.isHomePage && (
+                          <Badge
+                            variant="outline"
+                            className="bg-purple-100 text-purple-800 border-purple-300 group-hover:bg-purple-200 transition-colors"
+                          >
+                            <LuHouse className="mr-1 h-3 w-3" />
+                            Ana Sayfa
+                          </Badge>
+                        )}
+                      </CardTitle>
+                      <CardDescription className="flex items-center mt-1 text-sm">
+                        <span className="inline-flex items-center text-gray-500">
+                          <LuExternalLink className="h-3.5 w-3.5 mr-1 text-gray-400" />
+                          /{page.slug}
+                        </span>
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className={`${getStatusColor(page)} flex items-center px-2 py-1`}
+                      >
+                        {getStatusIcon(page)}
+                        {getStatusText(page)}
+                      </Badge>
+                      <Switch
+                        checked={page.isPublished}
+                        onCheckedChange={(checked) =>
+                          handleTogglePublished(page.id, checked)
+                        }
+                        aria-label={page.isPublished ? "Yayında" : "Taslak"}
+                        className="data-[state=checked]:bg-blue-600"
+                      />
+                    </div>
                   </div>
-                  <Switch
-                    checked={page.isPublished}
-                    onCheckedChange={(checked) =>
-                      handleTogglePublished(page.id, checked)
-                    }
-                    aria-label={page.isPublished ? "Yayında" : "Taslak"}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Bölüm: {page.sectionsCount || 0}</span>
-                  <span>
-                    Son Güncelleme:{" "}
-                    {new Date(page.updatedAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button
-                  variant="outline"
-                  onClick={() => router.push(`/page-editor/${page.id}`)}
-                >
-                  Düzenle
-                </Button>
-                <div className="space-x-2">
-                  {!page.isHomePage && (
+                </CardHeader>
+                <CardContent className="pb-2">
+                  <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+                    <div className="flex items-center">
+                      <LuFileText className="h-3.5 w-3.5 mr-1 text-blue-500" />
+                      <span>{page.sectionsCount || 0} bölüm</span>
+                    </div>
+                    <div className="flex items-center">
+                      <LuCalendar className="h-3.5 w-3.5 mr-1 text-blue-500" />
+                      <span>
+                        {new Date(page.updatedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {page.metaDescription && (
+                    <p className="mt-3 text-sm text-gray-600 line-clamp-2">
+                      {page.metaDescription}
+                    </p>
+                  )}
+                </CardContent>
+                <CardFooter className="flex justify-between pt-4 border-t border-gray-100 mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/page-editor/${page.id}`)}
+                    className="gap-1 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                  >
+                    <LuPencil className="h-4 w-4" />
+                    Düzenle
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    {!page.isHomePage && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSetHomePage(page.id)}
+                        className="gap-1 text-purple-600 hover:bg-purple-50 hover:text-purple-700"
+                      >
+                        <LuHouse className="h-4 w-4" />
+                        Ana Sayfa Yap
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
-                      onClick={() => handleSetHomePage(page.id)}
+                      size="sm"
+                      onClick={() => {
+                        setPageToDelete(page.id);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                      className="text-red-600 hover:bg-red-50 hover:text-red-700"
                     >
-                      Ana Sayfa Yap
+                      <LuTrash2 className="h-4 w-4" />
                     </Button>
-                  )}
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      setPageToDelete(page.id);
-                      setIsDeleteDialogOpen(true);
-                    }}
-                  >
-                    Sil
-                  </Button>
-                </div>
-              </CardFooter>
-            </Card>
+                  </div>
+                </CardFooter>
+              </Card>
+            </motion.div>
           ))
         )}
       </div>
 
       {/* Yeni Sayfa Oluşturma Dialog */}
       <Dialog open={isNewPageDialogOpen} onOpenChange={setIsNewPageDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Yeni Sayfa Oluştur</DialogTitle>
+            <DialogTitle className="text-xl font-bold">
+              Yeni Sayfa Oluştur
+            </DialogTitle>
             <DialogDescription>
-              Mağazanız için yeni bir sayfa oluşturun.
+              Mağazanız için yeni bir sayfa oluşturun. Bu sayfa daha sonra
+              düzenleyici ile özelleştirilebilir.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-5 py-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Sayfa Başlığı</Label>
+              <Label htmlFor="title" className="font-medium">
+                Sayfa Başlığı
+              </Label>
               <Input
                 id="title"
                 name="title"
                 value={newPage.title}
                 onChange={handleTitleChange}
                 placeholder="Örn: Hakkımızda"
+                className="border-gray-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="slug">URL Slug</Label>
+              <Label htmlFor="slug" className="font-medium">
+                URL Slug
+              </Label>
               <Input
                 id="slug"
                 name="slug"
                 value={newPage.slug}
                 onChange={handleSlugChange}
                 placeholder="Örn: hakkimizda"
+                className="border-gray-300"
               />
-              <p className="text-xs text-muted-foreground">
-                Bu sayfa şu URL'de görüntülenecek: /pages/
-                {newPage.slug || "sayfa-slug"}
+              <p className="text-xs text-gray-500 flex items-center">
+                <LuExternalLink className="h-3.5 w-3.5 mr-1" />
+                Bu sayfa şu URL'de görüntülenecek: /store/
+                <span className="font-medium text-blue-600">
+                  {newPage.slug || "sayfa-slug"}
+                </span>
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="metaTitle">Meta Başlık (SEO)</Label>
+              <Label htmlFor="metaTitle" className="font-medium">
+                Meta Başlık (SEO)
+              </Label>
               <Input
                 id="metaTitle"
                 name="metaTitle"
                 value={newPage.metaTitle}
                 onChange={handleInputChange}
                 placeholder="SEO için sayfa başlığı"
+                className="border-gray-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="metaDescription">Meta Açıklama (SEO)</Label>
+              <Label htmlFor="metaDescription" className="font-medium">
+                Meta Açıklama (SEO)
+              </Label>
               <Input
                 id="metaDescription"
                 name="metaDescription"
                 value={newPage.metaDescription}
                 onChange={handleInputChange}
                 placeholder="SEO için sayfa açıklaması"
+                className="border-gray-300"
               />
+              <p className="text-xs text-gray-500">
+                Bu açıklama arama motorlarında ve sosyal medya paylaşımlarında
+                görüntülenecektir.
+              </p>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
               <Switch
                 id="isHomePage"
                 checked={newPage.isHomePage}
                 onCheckedChange={(checked) =>
                   setNewPage((prev) => ({ ...prev, isHomePage: checked }))
                 }
+                className="data-[state=checked]:bg-purple-600"
               />
-              <Label htmlFor="isHomePage">Ana sayfa olarak ayarla</Label>
+              <div>
+                <Label
+                  htmlFor="isHomePage"
+                  className="font-medium flex items-center"
+                >
+                  <LuHouse className="mr-1 h-4 w-4 text-purple-600" />
+                  Ana sayfa olarak ayarla
+                </Label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Bu sayfayı mağazanızın landing sayfası yapacaktır.
+                </p>
+              </div>
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="outline"
               onClick={() => setIsNewPageDialogOpen(false)}
+              className="border-gray-300"
             >
               İptal
             </Button>
             <Button
               onClick={handleCreatePage}
               disabled={!newPage.title || !newPage.slug}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
             >
+              <LuPencil className="mr-2 h-4 w-4" />
               Oluştur ve Düzenle
             </Button>
           </DialogFooter>
@@ -407,29 +638,39 @@ export default function StorePages() {
 
       {/* Sayfa Silme Onay Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Sayfayı Sil</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-red-600 flex items-center">
+              <LuTrash2 className="h-5 w-5 mr-2" />
+              Sayfayı Sil
+            </DialogTitle>
             <DialogDescription>
               Bu sayfayı silmek istediğinizden emin misiniz? Bu işlem geri
-              alınamaz.
+              alınamaz ve sayfaya ait tüm içerikler kalıcı olarak silinecektir.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="mt-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800 my-2">
+            <p className="font-medium">Uyarı: Bu işlem geri alınamaz!</p>
+            <p className="mt-1">Silinen sayfa ve içeriği geri getirilemez.</p>
+          </div>
+          <DialogFooter className="mt-4 gap-2 sm:gap-0">
             <Button
               variant="outline"
               onClick={() => {
                 setIsDeleteDialogOpen(false);
                 setPageToDelete(null);
               }}
+              className="border-gray-300"
             >
               İptal
             </Button>
             <Button
               variant="destructive"
               onClick={() => pageToDelete && handleDeletePage(pageToDelete)}
+              className="bg-red-600 hover:bg-red-700"
             >
-              Sil
+              <LuTrash2 className="mr-2 h-4 w-4" />
+              Sayfayı Sil
             </Button>
           </DialogFooter>
         </DialogContent>

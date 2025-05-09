@@ -4,6 +4,7 @@ import React from "react";
 import "@/app/globals.css";
 import Sidebar from "@/components/sidebar";
 import Topbar from "@/components/topbar";
+import ClientAIChatWidget from "@/components/ClientAIChatWidget";
 
 export const metadata: Metadata = {
   title: "Envanter ve Müşteri Yönetim Sistemi",
@@ -16,15 +17,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" className="overflow-hidden">
+      <body className="overflow-hidden">
         <AuthProvider>
-          <div className="flex h-screen bg-slate-50">
+          <div className="flex h-screen bg-slate-50 overflow-hidden">
             <Sidebar />
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col overflow-hidden">
               <Topbar />
-              <main className="flex-1 overflow-auto p-6">{children}</main>
+              <main className="flex-1 overflow-auto">{children}</main>
             </div>
+            {/* AI Chat Widget */}
+            <ClientAIChatWidget />
           </div>
         </AuthProvider>
       </body>

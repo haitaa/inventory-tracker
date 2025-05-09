@@ -44,20 +44,19 @@ router.put("/categories/:id", updateComponentCategory);
 router.delete("/categories/:id", deleteComponentCategory);
 
 // Bileşen rotaları
-router.get("/components", getAllComponents);
-router.get("/components/:id", getComponentById);
-router.post("/components", createComponent);
-router.put("/components/:id", updateComponent);
-router.delete("/components/:id", deleteComponent);
+router.get("/", getAllComponents);
+router.get("/:id", getComponentById);
+router.post("/", createComponent);
+router.put("/:id", updateComponent);
+router.delete("/:id", deleteComponent);
 
 // Bileşen versiyon rotaları
-router.get("/components/:componentId/versions", getComponentVersions);
-router.get(
-  "/components/:componentId/versions/latest",
-  getLatestComponentVersion
-);
+router.get("/:componentId/versions", getComponentVersions);
+router.get("/:componentId/versions/latest", getLatestComponentVersion);
+router.post("/:componentId/versions", createComponentVersion);
+
+// Component version endpoint'leri
 router.get("/versions/:id", getComponentVersionById);
-router.post("/components/:componentId/versions", createComponentVersion);
 router.put("/versions/:id", updateComponentVersion);
 router.delete("/versions/:id", deleteComponentVersion);
 

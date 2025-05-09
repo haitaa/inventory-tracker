@@ -222,7 +222,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex-1 space-y-6 p-8 pt-6 bg-gray-50 dark:bg-gray-900/30">
+    <div className="flex-1 space-y-6 px-6 py-6 bg-gray-50 dark:bg-gray-900/30 overflow-auto">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-700 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-300">
@@ -550,7 +550,11 @@ export default function Home() {
                 </div>
               </CardHeader>
               <CardContent className="pt-4">
-                <ScrollArea className="h-72 pr-4">
+                <ScrollArea
+                  className="h-72 pr-4"
+                  scrollHideDelay={0}
+                  type="always"
+                >
                   {lowStockProducts.map((product) => (
                     <div
                       key={product.id}
@@ -693,7 +697,11 @@ export default function Home() {
                 </div>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-60 pr-4">
+                <ScrollArea
+                  className="h-60 pr-4"
+                  scrollHideDelay={0}
+                  type="always"
+                >
                   {recentActivity.map((activity) => (
                     <div
                       key={activity.id}

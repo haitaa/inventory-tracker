@@ -17,29 +17,12 @@ const componentCategoryRepository = new PrismaComponentCategoryRepository(
  */
 export const getAllComponents = async (req, res) => {
   try {
-    let components;
-    const { categoryId, type, isGlobal, isActive } = req.query;
-
-    if (categoryId) {
-      components = await componentRepository.getByCategoryId(categoryId);
-    } else if (type) {
-      components = await componentRepository.getByType(type);
-    } else if (isGlobal !== undefined) {
-      components = await componentRepository.getByGlobalStatus(
-        isGlobal === "true"
-      );
-    } else if (isActive !== undefined) {
-      if (isActive === "true") {
-        components = await componentRepository.getActive();
-      } else {
-        // Tüm bileşenleri getir ve filtreleme yap
-        const allComponents = await componentRepository.getAll();
-        components = allComponents.filter((c) => !c.isActive);
-      }
-    } else {
-      // Default tüm bileşenleri getir
-      components = await componentRepository.getAll();
-    }
+    const prisma = req.app.locals.prisma;
+    const components = await prisma.component.findMany({
+      include: {
+        versions: true,
+      },
+    });
 
     res.status(200).json(components);
   } catch (error) {
@@ -55,8 +38,15 @@ export const getAllComponents = async (req, res) => {
  */
 export const getComponentById = async (req, res) => {
   try {
+    const prisma = req.app.locals.prisma;
     const { id } = req.params;
-    const component = await componentRepository.getById(id);
+
+    const component = await prisma.component.findUnique({
+      where: { id },
+      include: {
+        versions: true,
+      },
+    });
 
     if (!component) {
       return res.status(404).json({ error: "Bileşen bulunamadı" });
@@ -76,56 +66,17 @@ export const getComponentById = async (req, res) => {
  */
 export const createComponent = async (req, res) => {
   try {
-    const {
-      name,
-      description,
-      categoryId,
-      type,
-      thumbnail,
-      schema,
-      defaultProps,
-      restrictions,
-      isGlobal,
-    } = req.body;
+    const prisma = req.app.locals.prisma;
+    const { name, description, tags, category } = req.body;
 
-    // Gerekli alanları kontrol et
-    if (!name || !categoryId || !type) {
-      return res.status(400).json({
-        error: "Ad, kategori ID ve tip alanları zorunludur",
-      });
-    }
-
-    // Eğer şema ve varsayılan özellikler gönderilmezse, hazır şemalardan al
-    let componentSchema = schema;
-    let componentDefaultProps = defaultProps;
-
-    if (!schema && componentSchemas[type]) {
-      componentSchema = componentSchemas[type].schema;
-      componentDefaultProps = componentSchemas[type].defaultProps;
-    }
-
-    if (!componentSchema) {
-      return res.status(400).json({
-        error: "Bileşen şeması zorunludur",
-      });
-    }
-
-    const createComponentUseCase = new CreateComponentUseCase(
-      componentRepository,
-      componentCategoryRepository
-    );
-
-    const component = await createComponentUseCase.execute(
-      name,
-      description,
-      categoryId,
-      type,
-      thumbnail,
-      componentSchema,
-      componentDefaultProps,
-      restrictions,
-      isGlobal || false
-    );
+    const component = await prisma.component.create({
+      data: {
+        name,
+        description,
+        tags: tags || [],
+        category,
+      },
+    });
 
     res.status(201).json(component);
   } catch (error) {
@@ -141,58 +92,34 @@ export const createComponent = async (req, res) => {
  */
 export const updateComponent = async (req, res) => {
   try {
+    const prisma = req.app.locals.prisma;
     const { id } = req.params;
-    const {
-      name,
-      description,
-      categoryId,
-      type,
-      thumbnail,
-      schema,
-      defaultProps,
-      restrictions,
-      isGlobal,
-      isActive,
-    } = req.body;
+    const { name, description, tags, category } = req.body;
 
     // Bileşen var mı kontrol et
-    const existingComponent = await componentRepository.getById(id);
+    const existingComponent = await prisma.component.findUnique({
+      where: { id },
+    });
+
     if (!existingComponent) {
       return res.status(404).json({ error: "Bileşen bulunamadı" });
     }
 
-    // Kategori değiştiyse ve yeni kategori mevcutsa kontrol et
-    if (categoryId && categoryId !== existingComponent.categoryId) {
-      const category = await componentCategoryRepository.getById(categoryId);
-      if (!category) {
-        return res
-          .status(400)
-          .json({ error: "Belirtilen kategori bulunamadı" });
-      }
-    }
+    const updatedComponent = await prisma.component.update({
+      where: { id },
+      data: {
+        name: name !== undefined ? name : existingComponent.name,
+        description:
+          description !== undefined
+            ? description
+            : existingComponent.description,
+        tags: tags !== undefined ? tags : existingComponent.tags,
+        category:
+          category !== undefined ? category : existingComponent.category,
+      },
+    });
 
-    // Güncelleme için yeni bir nesne oluştur
-    const updatedComponent = {
-      ...existingComponent,
-      name: name || existingComponent.name,
-      description:
-        description !== undefined ? description : existingComponent.description,
-      categoryId: categoryId || existingComponent.categoryId,
-      type: type || existingComponent.type,
-      thumbnail:
-        thumbnail !== undefined ? thumbnail : existingComponent.thumbnail,
-      schema: schema || existingComponent.schema,
-      defaultProps: defaultProps || existingComponent.defaultProps,
-      restrictions:
-        restrictions !== undefined
-          ? restrictions
-          : existingComponent.restrictions,
-      isGlobal: isGlobal !== undefined ? isGlobal : existingComponent.isGlobal,
-      isActive: isActive !== undefined ? isActive : existingComponent.isActive,
-    };
-
-    const result = await componentRepository.update(updatedComponent);
-    res.status(200).json(result);
+    res.status(200).json(updatedComponent);
   } catch (error) {
     console.error("Bileşen güncelleme hatası:", error);
     res.status(500).json({ error: "Bileşen güncellenirken bir hata oluştu" });
@@ -206,21 +133,32 @@ export const updateComponent = async (req, res) => {
  */
 export const deleteComponent = async (req, res) => {
   try {
+    const prisma = req.app.locals.prisma;
     const { id } = req.params;
 
     // Bileşen var mı kontrol et
-    const existingComponent = await componentRepository.getById(id);
+    const existingComponent = await prisma.component.findUnique({
+      where: { id },
+      include: { versions: true },
+    });
+
     if (!existingComponent) {
       return res.status(404).json({ error: "Bileşen bulunamadı" });
     }
 
-    const result = await componentRepository.delete(id);
-
-    if (result) {
-      res.status(200).json({ message: "Bileşen başarıyla silindi" });
-    } else {
-      res.status(500).json({ error: "Bileşen silinirken bir hata oluştu" });
+    // Önce tüm bileşen versiyonlarını sil
+    if (existingComponent.versions && existingComponent.versions.length > 0) {
+      await prisma.componentVersion.deleteMany({
+        where: { componentId: id },
+      });
     }
+
+    // Bileşeni sil
+    await prisma.component.delete({
+      where: { id },
+    });
+
+    res.status(200).json({ message: "Bileşen başarıyla silindi" });
   } catch (error) {
     console.error("Bileşen silme hatası:", error);
     res.status(500).json({ error: "Bileşen silinirken bir hata oluştu" });

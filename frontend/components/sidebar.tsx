@@ -28,6 +28,8 @@ import { HiQuestionMarkCircle } from "react-icons/hi";
 import { FaArrowRightToBracket } from "react-icons/fa6";
 import { FiChevronRight, FiChevronDown, FiActivity } from "react-icons/fi";
 import { FaWarehouse } from "react-icons/fa";
+import { TbLayoutGridAdd } from "react-icons/tb";
+import { RiStore2Line, RiPagesLine } from "react-icons/ri";
 
 // Gruplandırılmış menü öğeleri tipini tanımlayalım
 type NavItem = {
@@ -54,6 +56,13 @@ const navGroups: NavGroup[] = [
         label: "Dashboard",
         href: "/dashboard",
         icon: LuLayoutDashboard,
+        badge: null,
+        highlight: true,
+      },
+      {
+        label: "Mağaza Sayfaları",
+        href: "/store-pages",
+        icon: RiStore2Line,
         badge: null,
         highlight: true,
       },
@@ -426,8 +435,20 @@ export default function Sidebar() {
                                 )}
 
                                 {/* Süsleme yıldızı */}
-                                {item.highlight && !isActive && (
-                                  <FaStar className="h-2.5 w-2.5 text-amber-400" />
+                                {item.highlight &&
+                                  !isActive &&
+                                  item.href !== "/store-pages" && (
+                                    <FaStar className="h-2.5 w-2.5 text-amber-400" />
+                                  )}
+
+                                {/* Mağaza sayfaları için özel efekt */}
+                                {item.href === "/store-pages" && !isActive && (
+                                  <div className="flex items-center space-x-1">
+                                    <span className="text-xs text-indigo-200 bg-indigo-800/60 px-1.5 py-0.5 rounded-full font-medium">
+                                      Pro
+                                    </span>
+                                    <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-indigo-400 animate-pulse"></div>
+                                  </div>
                                 )}
 
                                 {/* İşlem tamamlandı işareti */}
